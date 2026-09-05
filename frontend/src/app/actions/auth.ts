@@ -69,7 +69,92 @@ export async function signup(formData: FormData) {
   }
 
   revalidatePath('/', 'layout')
+  redirect('/onboarding')
+}
+
+export async function completeOnboarding(formData: FormData) {
+  const fullName = formData.get('fullName') as string
+  const phone = formData.get('phone') as string
+  const role = formData.get('role') as string || 'representante'
+
+  if (!fullName) {
+    return { error: 'Por favor, informe seu nome completo.' }
+  }
+
+  const supabase = await createClient()
+
+  const { error } = await supabase.auth.updateUser({
+    data: {
+      full_name: fullName,
+      phone: phone || '',
+      role: role,
+      onboarding_completed: true,
+    },
+  })
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  revalidatePath('/', 'layout')
   redirect('/')
+}
+
+export async function updateProfile(formData: FormData) {
+  const fullName = formData.get('fullName') as string
+  const phone = formData.get('phone') as string
+  const role = formData.get('role') as string
+
+  if (!fullName) {
+    return { error: 'O nome não pode ficar em branco.' }
+  }
+
+  const supabase = await createClient()
+
+  const { error } = await supabase.auth.updateUser({
+    data: {
+      full_name: fullName,
+      phone: phone || '',
+      role: role || 'representante',
+    },
+  })
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  revalidatePath('/perfil')
+  revalidatePath('/', 'layout')
+  return { success: true, message: 'Perfil atualizado com sucesso!' }
+}
+
+export async function updatePassword(formData: FormData) {
+  const password = formData.get('password') as string
+  const confirmPassword = formData.get('confirmPassword') as string
+
+  if (!password || !confirmPassword) {
+    return { error: 'Por favor, preencha todos os campos de senha.' }
+  }
+
+  if (password.length < 6) {
+    return { error: 'A nova senha deve ter no mínimo 6 caracteres.' }
+  }
+
+  if (password !== confirmPassword) {
+    return { error: 'As senhas não coincidem.' }
+  }
+
+  const supabase = await createClient()
+
+  const { error } = await supabase.auth.updateUser({
+    password: password,
+  })
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  return { success: true, message: 'Senha atualizada com sucesso!' }
 }
 
 export async function logout() {
