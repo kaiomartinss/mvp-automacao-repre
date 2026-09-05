@@ -27,8 +27,32 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  // Refresh session if needed
-  await supabase.auth.getUser()
+  // IMPORTANT: Avoid writing any logic between createServerClient and
+  // supabase.auth.getUser(). A simple mistake could make it very hard to debug
+  // issues with users being randomly logged out.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  const pathname = request.nextUrl.pathname
+
+  // Rotas públicas que não exigem login
+  const isPublicRoute = pathname.startsWith('/login') || pathname.startsWith('/auth')
+
+  if (!user && !isPublicRoute) {
+    // Redireciona para o login se não autenticado
+    const url = request.nextUrl.clone()
+    url.pathname = '/login'
+    return NextResponse.redirect(url)
+  }
+
+  if (user && pathname.startsWith('/login')) {
+    // Se já estiver logado e tentar abrir /login, redireciona para a home
+    const url = request.nextUrl.clone()
+    url.pathname = '/'
+    return NextResponse.redirect(url)
+  }
 
   return supabaseResponse
 }
+

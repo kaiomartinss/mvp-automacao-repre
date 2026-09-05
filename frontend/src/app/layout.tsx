@@ -12,8 +12,6 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-import { Sidebar } from "@/components/Sidebar";
-
 export const metadata: Metadata = {
   title: "Winback Engine",
   description: "SaaS de Reativação Comercial",
@@ -29,12 +27,10 @@ export default function RootLayout({
       lang="pt-BR"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
     >
-      <body className="min-h-full flex text-foreground bg-background">
-        <Sidebar />
-        <div className="flex-1 min-w-0 pb-16 md:pb-0">
-          {children}
-        </div>
+      <body className="min-h-full flex flex-col text-foreground bg-background">
+        {children}
       </body>
     </html>
   );
 }
+

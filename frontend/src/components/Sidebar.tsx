@@ -1,5 +1,6 @@
-import { Home, Users, MessageSquare, BarChart2 } from "lucide-react"
+import { Home, Users, MessageSquare, BarChart2, LogOut } from "lucide-react"
 import Link from "next/link"
+import { logout } from "@/app/actions/auth"
 
 export function Sidebar() {
   return (
@@ -31,6 +32,19 @@ export function Sidebar() {
             <BarChart2 className="w-5 h-5" />
           </div>
         </nav>
+
+        {/* Botão Sair (Desktop) */}
+        <div className="mt-auto pt-4 border-t border-white/5 w-full flex justify-center">
+          <form action={logout}>
+            <button
+              type="submit"
+              className="p-3 rounded-xl text-muted-foreground/60 hover:text-destructive hover:bg-destructive/10 transition-all cursor-pointer"
+              title="Sair da Conta"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
+          </form>
+        </div>
       </aside>
 
       {/* 2. Barra de Navegação Inferior estilo App Mobile (apenas no Celular) */}
@@ -54,8 +68,19 @@ export function Sidebar() {
           <BarChart2 className="w-5 h-5" />
           <span className="text-[10px] font-medium tracking-tight">Métricas</span>
         </div>
+        <form action={logout}>
+          <button
+            type="submit"
+            className="flex flex-col items-center gap-1 text-muted-foreground/60 hover:text-destructive transition-colors cursor-pointer"
+            title="Sair"
+          >
+            <LogOut className="w-5 h-5" />
+            <span className="text-[10px] font-medium tracking-tight">Sair</span>
+          </button>
+        </form>
       </nav>
     </>
   )
 }
+
 
