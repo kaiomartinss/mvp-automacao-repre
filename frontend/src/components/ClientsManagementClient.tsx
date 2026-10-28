@@ -26,8 +26,13 @@ import {
   Loader2,
   Users,
   Filter,
-  ExternalLink
+  ExternalLink,
+  ShoppingBag,
+  FileSpreadsheet
 } from 'lucide-react'
+import { RegisterOrderModal } from '@/components/RegisterOrderModal'
+import { ImportClientsModal } from '@/components/ImportClientsModal'
+
 
 export interface ClientItem {
   id: string
@@ -50,6 +55,8 @@ export function ClientsManagementClient({ initialClients }: { initialClients: Cl
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [editingClient, setEditingClient] = useState<ClientItem | null>(null)
+  const [isImportOpen, setIsImportOpen] = useState(false)
+  const [orderModalClient, setOrderModalClient] = useState<{ id: string; name: string } | null>(null)
   const [formLoading, setFormLoading] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
 
@@ -329,6 +336,17 @@ export function ClientsManagementClient({ initialClients }: { initialClients: Cl
               </select>
             )}
 
+            {/* Importar CSV Button */}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsImportOpen(true)}
+              className="border-white/10 bg-white/5 hover:bg-white/10 text-white font-medium gap-1.5 h-10 cursor-pointer text-xs"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+              <span>Importar CSV</span>
+            </Button>
+
             {/* Novo Cliente Button */}
             <Button
               onClick={() => {
@@ -461,6 +479,18 @@ export function ClientsManagementClient({ initialClients }: { initialClients: Cl
                             clientName={client.name}
                             phone={client.phone}
                           />
+
+                          {/* Registrar Venda */}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setOrderModalClient({ id: client.id, name: client.name })}
+                            className="h-8 gap-1 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 text-xs font-medium cursor-pointer"
+                            title="Registrar Venda / Pedido"
+                          >
+                            <ShoppingBag className="w-3.5 h-3.5" />
+                            <span className="hidden xl:inline">Venda</span>
+                          </Button>
 
                           {/* Editar */}
                           <Button
@@ -727,6 +757,27 @@ export function ClientsManagementClient({ initialClients }: { initialClients: Cl
           )}
         </DialogContent>
       </Dialog>
+
+      {/* 5. Modal de Importação de Clientes via CSV */}
+      <ImportClientsModal
+        open={isImportOpen}
+        onOpenChange={setIsImportOpen}
+        onSuccess={() => window.location.reload()}
+      />
+
+      {/* 6. Modal de Registro de Venda / Pedido */}
+      {orderModalClient && (
+        <RegisterOrderModal
+          open={!!orderModalClient}
+          onOpenChange={(open) => {
+            if (!open) setOrderModalClient(null)
+          }}
+          clientId={orderModalClient.id}
+          clientName={orderModalClient.name}
+          onSuccess={() => window.location.reload()}
+        />
+      )}
     </div>
   )
 }
+

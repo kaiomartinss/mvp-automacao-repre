@@ -68,9 +68,9 @@ services:
     command:
       - "http"
       - "n8n:5678"
-      - "--domain=egging-hangout-acclaim.ngrok-free.dev"
+      - "--domain=${NGROK_DOMAIN:-egging-hangout-acclaim.ngrok-free.dev}"
     environment:
-      - NGROK_AUTHTOKEN=3IsfFNQfHBSzvGBPb2Y5kQjfEvj_4M7CqUVYnL3q83f5aYfDe
+      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
     depends_on:
       - n8n
 

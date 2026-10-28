@@ -18,6 +18,7 @@ import {
   Calendar,
   KeyRound
 } from 'lucide-react'
+import { WhatsAppStatusCard } from '@/components/WhatsAppStatusCard'
 
 interface ProfileClientProps {
   user: {
@@ -152,8 +153,13 @@ export function ProfileClient({ user }: ProfileClientProps) {
         </CardContent>
       </Card>
 
+      {/* 2. Integração WhatsApp / Evolution API */}
+      <div className="mb-6">
+        <WhatsAppStatusCard />
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* 2. Formulário de Dados Cadastrais */}
+        {/* 3. Formulário de Dados Cadastrais */}
         <Card className="border-white/10 bg-[#12161A] flex flex-col justify-between">
           <div>
             <CardHeader>

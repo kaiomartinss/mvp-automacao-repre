@@ -4,8 +4,10 @@ import { useState, useMemo } from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { DispararN8NButton } from "@/components/DispararN8NButton"
-import { Clock, Search } from "lucide-react"
+import { Clock, Search, ShoppingBag } from "lucide-react"
 import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { RegisterOrderModal } from "@/components/RegisterOrderModal"
 
 interface InactiveClient {
   id: string
@@ -16,6 +18,7 @@ interface InactiveClient {
 
 export function ClientSearchTable({ initialClients }: { initialClients: InactiveClient[] }) {
   const [searchTerm, setSearchTerm] = useState("")
+  const [orderModalClient, setOrderModalClient] = useState<{ id: string; name: string } | null>(null)
 
   const filteredClients = useMemo(() => {
     if (!searchTerm.trim()) return initialClients
@@ -72,11 +75,23 @@ export function ClientSearchTable({ initialClients }: { initialClients: Inactive
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    <DispararN8NButton 
-                      clientId={client.id} 
-                      clientName={client.name} 
-                      phone={client.phone} 
-                    />
+                    <div className="flex items-center justify-end gap-1.5">
+                      <DispararN8NButton 
+                        clientId={client.id} 
+                        clientName={client.name} 
+                        phone={client.phone} 
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setOrderModalClient({ id: client.id, name: client.name })}
+                        className="h-8 gap-1 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 text-xs font-medium cursor-pointer"
+                        title="Registrar Venda / Pedido"
+                      >
+                        <ShoppingBag className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Venda</span>
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
@@ -92,6 +107,18 @@ export function ClientSearchTable({ initialClients }: { initialClients: Inactive
           </TableBody>
         </Table>
       </div>
+
+      {orderModalClient && (
+        <RegisterOrderModal
+          open={!!orderModalClient}
+          onOpenChange={(open) => {
+            if (!open) setOrderModalClient(null)
+          }}
+          clientId={orderModalClient.id}
+          clientName={orderModalClient.name}
+          onSuccess={() => window.location.reload()}
+        />
+      )}
     </div>
   )
 }

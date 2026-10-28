@@ -6,11 +6,31 @@ export const revalidate = 0
 export default async function ClientesPage() {
   const supabase = await createClient()
 
-  // Busca todos os clientes cadastrados
-  const { data: rawClients, error: clientsError } = await supabase
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  // Busca todos os clientes cadastrados pertencentes ao usuário ou globais
+  let clientsQuery = supabase
     .from('clients')
     .select('id, name, phone, cnpj, city, state, created_at')
     .order('name', { ascending: true })
+
+  if (user) {
+    clientsQuery = clientsQuery.or(`user_id.eq.${user.id},user_id.is.null`)
+  }
+
+  let { data: rawClients, error: clientsError } = await clientsQuery
+
+  // Fallback se a coluna user_id ainda não tiver sido criada no Supabase
+  if (!rawClients && clientsError?.message?.includes('user_id')) {
+    const fallback = await supabase
+      .from('clients')
+      .select('id, name, phone, cnpj, city, state, created_at')
+      .order('name', { ascending: true })
+    rawClients = fallback.data
+    clientsError = fallback.error
+  }
 
   if (clientsError) {
     console.error('Erro ao buscar clientes:', clientsError)

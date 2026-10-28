@@ -14,16 +14,43 @@ export const revalidate = 0
 export default async function Dashboard() {
   const supabase = await createClient()
 
-  // Buscar clientes inativos (tabela da tela, limite 10)
-  const { data: inactiveClients, error: inativosError } = await supabase
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  // Buscar clientes inativos do usuário logado (tabela da tela, limite 10)
+  let inactiveClientsQuery = supabase
     .from('v_inactive_clients')
     .select('*')
-    .limit(10)
+
+  if (user) {
+    inactiveClientsQuery = inactiveClientsQuery.or(`user_id.eq.${user.id},user_id.is.null`)
+  }
+
+  let { data: inactiveClients, error: inativosError } = await inactiveClientsQuery.limit(10)
+
+  // Fallback se a view não tiver user_id
+  if (!inactiveClients && inativosError?.message?.includes('user_id')) {
+    const fallback = await supabase.from('v_inactive_clients').select('*').limit(10)
+    inactiveClients = fallback.data
+    inativosError = fallback.error
+  }
 
   // Contagem real total de inativos e estratificação por dias
-  const { data: allInactive } = await supabase
+  let allInactiveQuery = supabase
     .from('v_inactive_clients')
     .select('last_visit')
+
+  if (user) {
+    allInactiveQuery = allInactiveQuery.or(`user_id.eq.${user.id},user_id.is.null`)
+  }
+
+  let { data: allInactive, error: allInactiveError } = await allInactiveQuery
+
+  if (!allInactive && allInactiveError?.message?.includes('user_id')) {
+    const fallback = await supabase.from('v_inactive_clients').select('last_visit')
+    allInactive = fallback.data
+  }
 
   const totalInativos = allInactive?.length || 0
   const inativos30d = allInactive?.filter(c => {
@@ -36,10 +63,21 @@ export default async function Dashboard() {
     return diff >= 90
   }).length || 0
 
-  // Buscar contagem real total de clientes na base
-  const { count: totalBaseCount } = await supabase
+  // Buscar contagem real total de clientes na base do usuário
+  let totalBaseQuery = supabase
     .from('clients')
     .select('*', { count: 'exact', head: true })
+
+  if (user) {
+    totalBaseQuery = totalBaseQuery.or(`user_id.eq.${user.id},user_id.is.null`)
+  }
+
+  let { count: totalBaseCount, error: baseCountErr } = await totalBaseQuery
+
+  if (totalBaseCount === null && baseCountErr?.message?.includes('user_id')) {
+    const fallback = await supabase.from('clients').select('*', { count: 'exact', head: true })
+    totalBaseCount = fallback.count
+  }
 
   const totalBase = totalBaseCount || 0
 
