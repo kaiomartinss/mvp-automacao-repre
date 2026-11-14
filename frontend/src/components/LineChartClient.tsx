@@ -33,17 +33,17 @@ export function LineChartClient({ data }: { data: any[] }) {
           tickFormatter={(value) => `${value}`}
         />
         <Tooltip 
-          contentStyle={{ backgroundColor: '#12161A', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
+          contentStyle={{ backgroundColor: '#111215', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
           itemStyle={{ color: '#00E676' }}
-          labelStyle={{ color: '#94A3B8', marginBottom: '4px' }}
+          labelStyle={{ color: '#A1A1AA', marginBottom: '4px' }}
         />
         <Line 
           type="monotone" 
           dataKey="count" 
           stroke="#00E676" 
-          strokeWidth={3} 
+          strokeWidth={2.5} 
           dot={false}
-          activeDot={{ r: 6, fill: "#00E676", stroke: "#12161A", strokeWidth: 2 }}
+          activeDot={{ r: 5, fill: "#00E676", stroke: "#111215", strokeWidth: 2 }}
         />
       </LineChart>
     </ResponsiveContainer>

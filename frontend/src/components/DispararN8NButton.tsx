@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { triggerN8NWebhook } from "@/app/actions/n8n"
-import { Loader2, MessageCircle, Send, CheckCircle2, Sparkles, AlertCircle } from "lucide-react"
+import { PaperPlaneTilt, CheckCircle, CircleNotch, WarningCircle, Sparkle } from "@phosphor-icons/react"
 
 export function DispararN8NButton({ 
   clientId, 
@@ -59,9 +59,9 @@ export function DispararN8NButton({
 
   if (success) {
     return (
-      <span className="inline-flex items-center gap-1.5 text-xs text-emerald-400 font-medium bg-emerald-500/10 px-2.5 py-1 rounded-md border border-emerald-500/20">
-        <CheckCircle2 className="w-3.5 h-3.5" />
-        Mensagem Enviada!
+      <span className="inline-flex items-center gap-1.5 text-xs text-zinc-200 font-medium bg-white/[0.06] px-2.5 py-1 rounded-md border border-white/10">
+        <CheckCircle className="w-3.5 h-3.5 text-[#00E676]" weight="fill" />
+        Enviada
       </span>
     )
   }
@@ -76,48 +76,48 @@ export function DispararN8NButton({
     }}>
       <DialogTrigger
         render={
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="gap-1.5 text-primary hover:text-primary hover:bg-primary/10 font-medium transition-all"
+          <button
+            type="button"
+            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-white/12 bg-white/[0.04] text-zinc-100 hover:bg-[#F4F4F5] hover:text-[#0C0D0F] hover:border-transparent text-xs font-medium active:scale-[0.98] transition-all cursor-pointer whitespace-nowrap"
           />
         }
       >
-        <MessageCircle className="w-4 h-4" />
-        Reativar no WhatsApp
+        <PaperPlaneTilt className="w-3.5 h-3.5" weight="regular" />
+        <span>Reativar</span>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-[520px] border-white/10 bg-[#0B0E11] text-foreground shadow-2xl">
+      <DialogContent className="sm:max-w-[520px] border-white/[0.1] bg-[#111215] text-foreground shadow-2xl">
         <DialogHeader>
-          <DialogTitle className="text-lg font-semibold tracking-tight flex items-center gap-2">
-            <MessageCircle className="w-5 h-5 text-emerald-400" />
+          <DialogTitle className="text-lg font-semibold tracking-tight flex items-center gap-2 text-[#F4F4F5]">
+            <PaperPlaneTilt className="w-4 h-4 text-[#00E676]" weight="regular" />
             Personalizar & Enviar WhatsApp
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 pt-2">
           {errorMessage && (
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs">
-              <AlertCircle className="w-4 h-4 shrink-0" />
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/25 text-red-300 text-xs">
+              <WarningCircle className="w-4 h-4 shrink-0" weight="regular" />
               <span>{errorMessage}</span>
             </div>
           )}
 
-          <div className="flex justify-between items-center bg-white/5 p-3 rounded-lg border border-white/5 text-sm">
+          <div className="flex justify-between items-center bg-[#0C0D0F] p-3.5 rounded-lg border border-white/[0.08] text-sm">
             <div>
-              <p className="font-medium text-foreground">{clientName || "Cliente"}</p>
-              <p className="text-xs text-muted-foreground">{formattedPhone}</p>
+              <p className="font-medium text-[#F4F4F5]">{clientName || "Cliente"}</p>
+              <p className="text-xs font-mono text-zinc-400 mt-0.5">{formattedPhone}</p>
             </div>
-            <span className="text-xs text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20 font-medium">
-              Pronto para envio
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-mono text-zinc-300">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#00E676]" />
+              Pronto
             </span>
           </div>
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-primary" />
-                Templates Rápidos:
+              <label className="text-xs font-medium text-zinc-300 flex items-center gap-1.5">
+                <Sparkle className="w-3.5 h-3.5 text-zinc-400" weight="regular" />
+                Templates Rápidos
               </label>
             </div>
 
@@ -129,8 +129,8 @@ export function DispararN8NButton({
                   onClick={() => setMessage(tpl.text)}
                   className={`text-[11px] px-2.5 py-1 rounded-md border transition-all cursor-pointer ${
                     message === tpl.text
-                      ? "bg-primary/15 border-primary text-primary font-medium"
-                      : "bg-white/5 border-white/5 text-muted-foreground hover:text-white hover:bg-white/10"
+                      ? "bg-[#F4F4F5] border-transparent text-[#0C0D0F] font-medium"
+                      : "bg-[#0C0D0F] border-white/[0.08] text-zinc-400 hover:text-zinc-100 hover:border-white/20"
                   }`}
                 >
                   {tpl.label}
@@ -140,12 +140,12 @@ export function DispararN8NButton({
           </div>
 
           <div className="space-y-1.5">
-            <p className="text-xs font-medium text-muted-foreground">Mensagem que será enviada (você pode editar):</p>
+            <p className="text-xs font-medium text-zinc-300">Mensagem que será enviada (editável):</p>
             <textarea
               rows={4}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              className="w-full bg-[#1A2228] p-3 rounded-lg border border-white/10 text-xs leading-relaxed text-zinc-200 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary resize-none"
+              className="w-full bg-[#0C0D0F] p-3 rounded-lg border border-white/12 text-xs leading-relaxed text-zinc-200 focus:outline-none focus:border-white/40 focus:ring-2 focus:ring-emerald-400/20 resize-none"
               placeholder="Digite a mensagem personalizada..."
             />
           </div>
@@ -157,7 +157,7 @@ export function DispararN8NButton({
             variant="ghost" 
             onClick={() => setOpen(false)}
             disabled={loading}
-            className="hover:bg-white/5"
+            className="hover:bg-white/5 text-zinc-300"
           >
             Cancelar
           </Button>
@@ -165,16 +165,16 @@ export function DispararN8NButton({
             type="button" 
             onClick={handleDisparo}
             disabled={loading || !message.trim()}
-            className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium gap-2 cursor-pointer shadow-[0_0_15px_rgba(16,185,129,0.25)]"
+            className="bg-[#F4F4F5] hover:bg-white text-[#0C0D0F] font-medium gap-2 cursor-pointer active:scale-[0.985] transition-all"
           >
             {loading ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Enviando via Robô...
+                <CircleNotch className="w-4 h-4 animate-spin" weight="bold" />
+                Enviando...
               </>
             ) : (
               <>
-                <Send className="w-4 h-4" />
+                <PaperPlaneTilt className="w-4 h-4" weight="bold" />
                 Confirmar e Disparar
               </>
             )}

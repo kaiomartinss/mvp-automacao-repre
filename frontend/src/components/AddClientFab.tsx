@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { addClient } from "@/app/actions/clients"
 
+import { Magnet } from "@/components/reactbits/Magnet"
+
 export function AddClientFab() {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -32,14 +34,16 @@ export function AddClientFab() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={
-        <button className="flex items-center gap-2 bg-primary hover:bg-primary/90 transition-all text-black font-semibold px-5 py-2.5 rounded-md shadow-[0_0_15px_rgba(0,230,118,0.2)] cursor-pointer" />
-      }>
-        <UserPlus className="w-4 h-4" />
-        <span className="text-sm">Adicionar Cliente</span>
-      </DialogTrigger>
+      <Magnet strength={0.14}>
+        <DialogTrigger render={
+          <button className="flex items-center gap-2 bg-[#F4F4F5] hover:bg-white active:scale-[0.985] transition-all text-[#0C0D0F] font-medium px-4 py-2.5 rounded-lg cursor-pointer whitespace-nowrap" />
+        }>
+          <UserPlus className="w-4 h-4" />
+          <span className="text-sm">Adicionar Cliente</span>
+        </DialogTrigger>
+      </Magnet>
 
-      <DialogContent className="sm:max-w-[500px] border-white/10 bg-[#0B0E11] text-foreground shadow-2xl">
+      <DialogContent className="sm:max-w-[500px] border-white/[0.1] bg-[#111215] text-foreground shadow-2xl">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
             <UserPlus className="w-5 h-5 text-primary" />

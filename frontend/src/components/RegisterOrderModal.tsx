@@ -55,7 +55,7 @@ export function RegisterOrderModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[440px] border-white/10 bg-[#0B0E11] text-foreground shadow-2xl">
+      <DialogContent className="sm:max-w-[440px] border-white/[0.1] bg-[#111215] text-foreground shadow-2xl">
         <DialogHeader>
           <DialogTitle className="text-lg font-bold tracking-tight text-white flex items-center gap-2">
             <ShoppingBag className="w-5 h-5 text-emerald-400" />
@@ -133,7 +133,7 @@ export function RegisterOrderModal({
             <Button
               type="submit"
               disabled={loading || !!success}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold cursor-pointer shadow-[0_0_15px_rgba(16,185,129,0.25)]"
+              className="bg-[#F4F4F5] hover:bg-white text-[#0C0D0F] font-medium cursor-pointer active:scale-[0.985] transition-all"
             >
               {loading ? (
                 <div className="flex items-center gap-2">

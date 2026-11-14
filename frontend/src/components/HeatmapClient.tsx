@@ -37,7 +37,7 @@ export function HeatmapClient({ logsData }: { logsData: any[] }) {
               key={i} 
               className={`w-4 h-4 rounded-[2px] ${bgClass} transition-colors hover:ring-1 hover:ring-primary relative group cursor-crosshair`}
             >
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-[#12161A] text-xs px-2 py-1 rounded border border-white/10 whitespace-nowrap z-10 shadow-xl">
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-[#0C0D0F] text-xs px-2.5 py-1 rounded-md border border-white/10 whitespace-nowrap z-10 shadow-xl font-mono">
                 {count} disparos em {dayStr.split('-').reverse().join('/')}
               </div>
             </div>

@@ -10,7 +10,7 @@ export default async function ClientesPage() {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Busca todos os clientes cadastrados pertencentes ao usuário ou globais
+  // Busca clientes e datas de pedidos em paralelo
   let clientsQuery = supabase
     .from('clients')
     .select('id, name, phone, cnpj, city, state, created_at')
@@ -20,7 +20,17 @@ export default async function ClientesPage() {
     clientsQuery = clientsQuery.or(`user_id.eq.${user.id},user_id.is.null`)
   }
 
-  let { data: rawClients, error: clientsError } = await clientsQuery
+  const [clientsRes, ordersRes] = await Promise.all([
+    clientsQuery,
+    supabase
+      .from('orders')
+      .select('client_id, order_date')
+      .order('order_date', { ascending: false }),
+  ])
+
+  let rawClients = clientsRes.data
+  let clientsError = clientsRes.error
+  const ordersData = ordersRes.data
 
   // Fallback se a coluna user_id ainda não tiver sido criada no Supabase
   if (!rawClients && clientsError?.message?.includes('user_id')) {
@@ -35,12 +45,6 @@ export default async function ClientesPage() {
   if (clientsError) {
     console.error('Erro ao buscar clientes:', clientsError)
   }
-
-  // Busca datas de pedidos para determinar a última compra de cada cliente
-  const { data: ordersData } = await supabase
-    .from('orders')
-    .select('client_id, order_date')
-    .order('order_date', { ascending: false })
 
   // Mapeia a data da última compra por ID de cliente
   const latestOrderMap = new Map<string, string>()
@@ -64,11 +68,13 @@ export default async function ClientesPage() {
   }))
 
   return (
-    <div className="flex-1 p-6 md:p-8 lg:p-10 max-w-[1400px] mx-auto w-full relative min-h-screen">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight text-white">Carteira de Clientes</h1>
-        <p className="text-muted-foreground text-sm">
-          Gerencie todos os clientes da sua representação, localize por cidade/CNPJ e acompanhe o ritmo de compra.
+    <div className="flex-1 p-6 md:p-8 lg:p-10 max-w-[1400px] mx-auto w-full relative min-h-[100dvh]">
+      <div className="pb-8 mb-8 border-b border-white/[0.08]">
+        <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-[#F4F4F5]">
+          Carteira de Clientes
+        </h1>
+        <p className="text-zinc-400 text-sm mt-1">
+          Gerencie todos os clientes da sua representação, localize por cidade ou CNPJ e acompanhe o ritmo de compra.
         </p>
       </div>
 

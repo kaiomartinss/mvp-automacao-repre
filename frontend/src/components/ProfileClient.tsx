@@ -109,12 +109,11 @@ export function ProfileClient({ user }: ProfileClientProps) {
   return (
     <div className="space-y-8 max-w-4xl">
       {/* 1. Card Cabeçalho do Perfil */}
-      <Card className="border-white/10 bg-[#12161A] overflow-hidden relative">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-emerald-400 to-indigo-500" />
+      <Card className="border-white/[0.08] bg-[#111215] shadow-none overflow-hidden relative">
         <CardContent className="p-6 md:p-8">
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
             {/* Avatar */}
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/30 to-primary/10 border border-primary/30 flex items-center justify-center text-primary font-bold text-2xl shadow-[0_0_20px_rgba(0,230,118,0.2)] shrink-0">
+            <div className="w-16 h-16 rounded-lg bg-[#F4F4F5] text-[#0C0D0F] flex items-center justify-center font-semibold text-xl tracking-tight shrink-0">
               {getInitials(fullName, user.email)}
             </div>
 
@@ -160,7 +159,7 @@ export function ProfileClient({ user }: ProfileClientProps) {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* 3. Formulário de Dados Cadastrais */}
-        <Card className="border-white/10 bg-[#12161A] flex flex-col justify-between">
+        <Card className="border-white/[0.08] bg-[#111215] shadow-none flex flex-col justify-between">
           <div>
             <CardHeader>
               <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
@@ -252,7 +251,7 @@ export function ProfileClient({ user }: ProfileClientProps) {
               type="submit"
               form="profile-form"
               disabled={profileLoading}
-              className="w-full bg-primary hover:bg-primary/90 text-black font-semibold shadow-[0_0_15px_rgba(0,230,118,0.2)] cursor-pointer"
+              className="w-full bg-[#F4F4F5] hover:bg-white text-[#0C0D0F] font-medium active:scale-[0.985] transition-all cursor-pointer"
             >
               {profileLoading ? (
                 <div className="flex items-center gap-2">
@@ -267,7 +266,7 @@ export function ProfileClient({ user }: ProfileClientProps) {
         </Card>
 
         {/* 3. Formulário de Segurança (Troca de Senha) */}
-        <Card className="border-white/10 bg-[#12161A] flex flex-col justify-between">
+        <Card className="border-white/[0.08] bg-[#111215] shadow-none flex flex-col justify-between">
           <div>
             <CardHeader>
               <CardTitle className="text-lg font-bold text-white flex items-center gap-2">

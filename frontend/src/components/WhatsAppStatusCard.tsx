@@ -65,8 +65,7 @@ export function WhatsAppStatusCard() {
   }
 
   return (
-    <Card className="border-white/10 bg-[#12161A] flex flex-col justify-between overflow-hidden relative">
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 via-primary to-emerald-400" />
+    <Card className="border-white/[0.08] bg-[#111215] shadow-none flex flex-col justify-between overflow-hidden relative">
       
       <div>
         <CardHeader className="pb-3">

@@ -129,7 +129,7 @@ export function ImportClientsModal({ open, onOpenChange, onSuccess }: ImportClie
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[650px] border-white/10 bg-[#0B0E11] text-foreground shadow-2xl max-h-[90vh] flex flex-col">
+      <DialogContent className="sm:max-w-[650px] border-white/[0.1] bg-[#111215] text-foreground shadow-2xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <div className="flex items-center justify-between pr-6">
             <DialogTitle className="text-lg font-bold tracking-tight text-white flex items-center gap-2">
@@ -237,7 +237,7 @@ export function ImportClientsModal({ open, onOpenChange, onSuccess }: ImportClie
             type="button"
             onClick={handleConfirmImport}
             disabled={loading || parsedClients.length === 0 || !!success}
-            className="bg-primary hover:bg-primary/90 text-black font-semibold cursor-pointer shadow-[0_0_15px_rgba(0,230,118,0.25)]"
+            className="bg-[#F4F4F5] hover:bg-white text-[#0C0D0F] font-medium cursor-pointer active:scale-[0.985] transition-all"
           >
             {loading ? (
               <div className="flex items-center gap-2">

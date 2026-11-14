@@ -27,9 +27,9 @@ import {
   Users,
   Filter,
   ExternalLink,
-  ShoppingBag,
   FileSpreadsheet
 } from 'lucide-react'
+import { Receipt } from '@phosphor-icons/react'
 import { RegisterOrderModal } from '@/components/RegisterOrderModal'
 import { ImportClientsModal } from '@/components/ImportClientsModal'
 
@@ -88,6 +88,29 @@ export function ClientsManagementClient({ initialClients }: { initialClients: Cl
     if (!lastVisit) return null
     const diff = (new Date().getTime() - new Date(lastVisit).getTime()) / (1000 * 3600 * 24)
     return Math.floor(diff)
+  }
+
+  // Initials & deterministic monochrome surface for client monogram
+  const getClientInitials = (name: string) => {
+    const parts = name.trim().split(/\s+/).filter(Boolean)
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+    }
+    return name.slice(0, 2).toUpperCase()
+  }
+
+  const getMonogramTone = (seed: string) => {
+    const tones = [
+      'bg-zinc-900 text-zinc-100 border-white/15',
+      'bg-[#181A20] text-zinc-200 border-white/12',
+      'bg-[#14161B] text-[#F4F4F5] border-white/15',
+      'bg-zinc-800/80 text-zinc-100 border-white/20',
+    ]
+    let hash = 0
+    for (let i = 0; i < seed.length; i++) {
+      hash = (hash * 31 + seed.charCodeAt(i)) >>> 0
+    }
+    return tones[hash % tones.length]
   }
 
   // Available unique states for filter
@@ -213,7 +236,7 @@ export function ClientsManagementClient({ initialClients }: { initialClients: Cl
     <div className="space-y-8">
       {/* 1. Indicadores da Carteira */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border-white/10 bg-[#12161A] p-5 relative overflow-hidden">
+        <Card className="border-white/10 bg-[#111215] shadow-none p-5 relative overflow-hidden">
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground font-medium">Total na Carteira</span>
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
@@ -224,7 +247,7 @@ export function ClientsManagementClient({ initialClients }: { initialClients: Cl
           <p className="text-[11px] text-muted-foreground mt-1">Clientes cadastrados na base</p>
         </Card>
 
-        <Card className="border-white/10 bg-[#12161A] p-5 relative overflow-hidden">
+        <Card className="border-white/10 bg-[#111215] shadow-none p-5 relative overflow-hidden">
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground font-medium">Clientes Ativos</span>
             <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400">
@@ -235,7 +258,7 @@ export function ClientsManagementClient({ initialClients }: { initialClients: Cl
           <p className="text-[11px] text-muted-foreground mt-1">Comprando há menos de 30 dias</p>
         </Card>
 
-        <Card className="border-white/10 bg-[#12161A] p-5 relative overflow-hidden">
+        <Card className="border-white/10 bg-[#111215] shadow-none p-5 relative overflow-hidden">
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground font-medium">Em Alerta (30-90d)</span>
             <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400">
@@ -246,7 +269,7 @@ export function ClientsManagementClient({ initialClients }: { initialClients: Cl
           <p className="text-[11px] text-muted-foreground mt-1">Janela ideal para reativação rápida</p>
         </Card>
 
-        <Card className="border-white/10 bg-[#12161A] p-5 relative overflow-hidden">
+        <Card className="border-white/10 bg-[#111215] shadow-none p-5 relative overflow-hidden">
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground font-medium">Inativos (+90d)</span>
             <div className="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-400">
@@ -259,7 +282,7 @@ export function ClientsManagementClient({ initialClients }: { initialClients: Cl
       </div>
 
       {/* 2. Barra de Busca, Filtros e Botão Novo Cliente */}
-      <Card className="border-white/10 bg-[#12161A] p-4">
+      <Card className="border-white/10 bg-[#111215] shadow-none p-4">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           {/* Busca */}
           <div className="relative flex-1 max-w-md">
@@ -353,7 +376,7 @@ export function ClientsManagementClient({ initialClients }: { initialClients: Cl
                 setFormError(null)
                 setIsAddOpen(true)
               }}
-              className="bg-primary hover:bg-primary/90 text-black font-semibold gap-1.5 h-10 shadow-[0_0_15px_rgba(0,230,118,0.2)] cursor-pointer"
+              className="bg-[#F4F4F5] hover:bg-white text-[#0C0D0F] font-medium gap-1.5 h-10 active:scale-[0.985] transition-all cursor-pointer"
             >
               <UserPlus className="w-4 h-4" />
               <span>Novo Cliente</span>
@@ -363,7 +386,7 @@ export function ClientsManagementClient({ initialClients }: { initialClients: Cl
       </Card>
 
       {/* 3. Tabela de Clientes */}
-      <Card className="border-white/10 bg-[#12161A] overflow-hidden">
+      <Card className="border-white/10 bg-[#111215] shadow-none overflow-hidden">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
@@ -383,34 +406,48 @@ export function ClientsManagementClient({ initialClients }: { initialClients: Cl
                   const cnpjFormatted = formatCNPJ(client.cnpj)
 
                   return (
-                    <TableRow key={client.id} className="border-white/5 hover:bg-white/5 transition-colors">
+                    <TableRow key={client.id} className="group/row border-white/[0.06] hover:bg-white/[0.03] transition-colors">
                       {/* Cliente Name */}
                       <TableCell className="font-medium text-sm">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-xs shrink-0">
-                            {client.name.slice(0, 2).toUpperCase()}
+                          <div
+                            className={`relative w-9 h-9 rounded-lg border flex items-center justify-center font-mono font-semibold text-[11px] tracking-wider shrink-0 transition-colors group-hover/row:border-white/30 ${getMonogramTone(client.id || client.name)}`}
+                          >
+                            {getClientInitials(client.name)}
+                            <span
+                              aria-hidden="true"
+                              className={`absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full ring-2 ring-[#111215] ${
+                                days === null
+                                  ? 'bg-zinc-500'
+                                  : days < 30
+                                  ? 'bg-[#00E676]'
+                                  : days < 90
+                                  ? 'bg-amber-400'
+                                  : 'bg-red-400'
+                              }`}
+                            />
                           </div>
                           <div>
-                            <p className="text-white font-semibold leading-snug">{client.name}</p>
-                            <span className="text-[11px] text-muted-foreground font-mono">ID: {client.id.slice(0, 8)}</span>
+                            <p className="text-[#F4F4F5] font-medium leading-snug">{client.name}</p>
+                            <span className="text-[11px] text-zinc-500 font-mono">#{client.id.slice(0, 8)}</span>
                           </div>
                         </div>
                       </TableCell>
 
                       {/* CNPJ */}
-                      <TableCell className="text-xs text-muted-foreground font-mono">
+                      <TableCell className="text-xs text-zinc-400 font-mono">
                         {cnpjFormatted ? (
                           <span className="text-zinc-300">{cnpjFormatted}</span>
                         ) : (
-                          <span className="text-muted-foreground/40">—</span>
+                          <span className="text-zinc-600">-</span>
                         )}
                       </TableCell>
 
                       {/* Localização */}
-                      <TableCell className="text-xs text-muted-foreground">
+                      <TableCell className="text-xs text-zinc-400">
                         {client.city || client.state ? (
                           <div className="flex items-center gap-1.5 text-zinc-300">
-                            <MapPin className="w-3.5 h-3.5 text-primary/70 shrink-0" />
+                            <MapPin className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
                             <span>
                               {client.city ? client.city : ''}
                               {client.city && client.state ? ' - ' : ''}
@@ -418,7 +455,7 @@ export function ClientsManagementClient({ initialClients }: { initialClients: Cl
                             </span>
                           </div>
                         ) : (
-                          <span className="text-muted-foreground/40">—</span>
+                          <span className="text-zinc-600">-</span>
                         )}
                       </TableCell>
 
@@ -451,21 +488,25 @@ export function ClientsManagementClient({ initialClients }: { initialClients: Cl
                           </div>
 
                           {days === null ? (
-                            <Badge variant="outline" className="text-zinc-400 border-white/10 bg-white/5 text-[10px] py-0">
-                              Novo / Sem compra
-                            </Badge>
+                            <span className="inline-flex items-center gap-1.5 text-[11px] text-zinc-400 font-mono">
+                              <span className="w-1.5 h-1.5 rounded-full bg-zinc-500" />
+                              Sem compra
+                            </span>
                           ) : days < 30 ? (
-                            <Badge variant="outline" className="text-emerald-400 border-emerald-500/20 bg-emerald-500/10 text-[10px] py-0">
-                              Ativo ({days}d)
-                            </Badge>
+                            <span className="inline-flex items-center gap-1.5 text-[11px] text-zinc-200 font-mono">
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#00E676]" />
+                              Ativo · {days}d
+                            </span>
                           ) : days < 90 ? (
-                            <Badge variant="outline" className="text-amber-400 border-amber-400/20 bg-amber-400/10 text-[10px] py-0">
-                              Alerta ({days}d)
-                            </Badge>
+                            <span className="inline-flex items-center gap-1.5 text-[11px] text-zinc-300 font-mono">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                              Alerta · {days}d
+                            </span>
                           ) : (
-                            <Badge variant="outline" className="text-rose-400 border-rose-500/20 bg-rose-500/10 text-[10px] py-0">
-                              Inativo ({days}d)
-                            </Badge>
+                            <span className="inline-flex items-center gap-1.5 text-[11px] text-zinc-300 font-mono">
+                              <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                              Inativo · {days}d
+                            </span>
                           )}
                         </div>
                       </TableCell>
@@ -481,16 +522,15 @@ export function ClientsManagementClient({ initialClients }: { initialClients: Cl
                           />
 
                           {/* Registrar Venda */}
-                          <Button
-                            variant="ghost"
-                            size="sm"
+                          <button
+                            type="button"
                             onClick={() => setOrderModalClient({ id: client.id, name: client.name })}
-                            className="h-8 gap-1 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 text-xs font-medium cursor-pointer"
+                            className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md border border-white/[0.08] bg-transparent text-zinc-300 hover:text-[#F4F4F5] hover:bg-white/[0.06] text-xs font-medium active:scale-[0.98] transition-all cursor-pointer"
                             title="Registrar Venda / Pedido"
                           >
-                            <ShoppingBag className="w-3.5 h-3.5" />
+                            <Receipt className="w-3.5 h-3.5" weight="regular" />
                             <span className="hidden xl:inline">Venda</span>
-                          </Button>
+                          </button>
 
                           {/* Editar */}
                           <Button
@@ -538,7 +578,7 @@ export function ClientsManagementClient({ initialClients }: { initialClients: Cl
 
       {/* 4. Modal de Adicionar Cliente (Completo com CNPJ, Cidade, Estado) */}
       <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-        <DialogContent className="sm:max-w-[500px] border-white/10 bg-[#0B0E11] text-foreground shadow-2xl">
+        <DialogContent className="sm:max-w-[500px] border-white/10 bg-[#111215] text-foreground shadow-2xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
               <UserPlus className="w-5 h-5 text-primary" />
@@ -653,7 +693,7 @@ export function ClientsManagementClient({ initialClients }: { initialClients: Cl
 
       {/* 5. Modal de Editar Cliente */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="sm:max-w-[500px] border-white/10 bg-[#0B0E11] text-foreground shadow-2xl">
+        <DialogContent className="sm:max-w-[500px] border-white/10 bg-[#111215] text-foreground shadow-2xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
               <Edit2 className="w-5 h-5 text-primary" />
