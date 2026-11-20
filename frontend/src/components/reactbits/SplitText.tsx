@@ -33,7 +33,7 @@ export function SplitText({
       {words.map((word, idx) => (
         <span
           key={`${word}-${idx}`}
-          className="inline-block overflow-hidden pb-[0.1em] -mb-[0.1em] align-bottom"
+          className="inline-block overflow-hidden px-[0.08em] -mx-[0.08em] pt-[0.06em] -mt-[0.06em] pb-[0.12em] -mb-[0.12em] align-bottom"
         >
           <motion.span
             className="inline-block will-change-transform"
