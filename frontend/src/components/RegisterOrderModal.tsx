@@ -1,12 +1,26 @@
 'use client'
 
 import { useState } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { addOrder } from '@/app/actions/clients'
-import { ShoppingBag, DollarSign, Calendar, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react'
+import {
+  Receipt,
+  CurrencyDollar,
+  CalendarBlank,
+  CircleNotch,
+  WarningCircle,
+  CheckCircle,
+} from '@phosphor-icons/react'
 
 interface RegisterOrderModalProps {
   open: boolean
@@ -42,12 +56,12 @@ export function RegisterOrderModal({
     if (res.error) {
       setError(res.error)
     } else {
-      setSuccess(res.message || 'Venda registrada com sucesso!')
+      setSuccess(res.message || 'Venda registrada com sucesso.')
       setTimeout(() => {
         onOpenChange(false)
         setSuccess(null)
         if (onSuccess) onSuccess()
-      }, 1500)
+      }, 1400)
     }
   }
 
@@ -55,38 +69,43 @@ export function RegisterOrderModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[440px] border-white/[0.1] bg-[#111215] text-foreground shadow-2xl">
+      <DialogContent className="sm:max-w-[440px]">
         <DialogHeader>
-          <DialogTitle className="text-lg font-bold tracking-tight text-white flex items-center gap-2">
-            <ShoppingBag className="w-5 h-5 text-emerald-400" />
-            Registrar Nova Venda / Pedido
+          <DialogTitle className="flex items-center gap-2">
+            <Receipt className="w-4 h-4 text-zinc-300" weight="regular" />
+            Registrar venda
           </DialogTitle>
+          <DialogDescription>
+            O cliente retorna automaticamente para o status ativo na carteira.
+          </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs">
-              <AlertCircle className="w-4 h-4 shrink-0" />
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/25 text-red-300 text-xs">
+              <WarningCircle className="w-4 h-4 shrink-0" weight="regular" />
               <span>{error}</span>
             </div>
           )}
 
           {success && (
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium">
-              <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 text-xs font-medium">
+              <CheckCircle className="w-4 h-4 shrink-0" weight="fill" />
               <span>{success}</span>
             </div>
           )}
 
-          <div className="bg-white/5 p-3 rounded-lg border border-white/5 text-sm">
-            <p className="text-xs text-muted-foreground">Cliente Reativado:</p>
-            <p className="font-semibold text-white mt-0.5">{clientName}</p>
+          <div className="bg-[#0C0D0F] p-3.5 rounded-lg border border-white/[0.08]">
+            <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-zinc-500">
+              Cliente
+            </p>
+            <p className="font-medium text-sm text-[#F4F4F5] mt-1">{clientName}</p>
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="amount" className="text-xs text-muted-foreground flex items-center gap-1.5">
-              <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
-              Valor da Venda (R$) *
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="amount" className="text-xs text-zinc-300 flex items-center gap-1.5">
+              <CurrencyDollar className="w-3.5 h-3.5 text-zinc-400" weight="regular" />
+              Valor da venda (R$) *
             </Label>
             <Input
               id="amount"
@@ -96,14 +115,14 @@ export function RegisterOrderModal({
               placeholder="Ex: 1500,00"
               required
               disabled={loading || !!success}
-              className="bg-black/30 border-white/10 text-white font-mono focus-visible:border-emerald-400 focus-visible:ring-emerald-400/20 h-10"
+              className="font-mono tabular-nums"
             />
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="orderDate" className="text-xs text-muted-foreground flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5 text-emerald-400" />
-              Data do Pedido
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="orderDate" className="text-xs text-zinc-300 flex items-center gap-1.5">
+              <CalendarBlank className="w-3.5 h-3.5 text-zinc-400" weight="regular" />
+              Data do pedido
             </Label>
             <Input
               id="orderDate"
@@ -112,21 +131,16 @@ export function RegisterOrderModal({
               defaultValue={todayStr}
               required
               disabled={loading || !!success}
-              className="bg-black/30 border-white/10 text-white focus-visible:border-emerald-400 focus-visible:ring-emerald-400/20 h-10"
             />
           </div>
 
-          <p className="text-[11px] text-muted-foreground leading-relaxed pt-1">
-            * Ao registrar a venda, este cliente é automaticamente marcado como <strong>ativo</strong> e a receita soma nas métricas de conversão do painel.
-          </p>
-
-          <DialogFooter className="pt-2 gap-2 sm:gap-0">
+          <DialogFooter className="mt-2">
             <Button
               type="button"
               variant="ghost"
               onClick={() => onOpenChange(false)}
               disabled={loading}
-              className="hover:bg-white/5"
+              className="text-zinc-300 hover:bg-white/5 cursor-pointer"
             >
               Cancelar
             </Button>
@@ -136,12 +150,12 @@ export function RegisterOrderModal({
               className="bg-[#F4F4F5] hover:bg-white text-[#0C0D0F] font-medium cursor-pointer active:scale-[0.985] transition-all"
             >
               {loading ? (
-                <div className="flex items-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Salvando venda...</span>
-                </div>
+                <span className="inline-flex items-center gap-2">
+                  <CircleNotch className="w-4 h-4 animate-spin" weight="bold" />
+                  Salvando...
+                </span>
               ) : (
-                'Confirmar Venda'
+                'Confirmar venda'
               )}
             </Button>
           </DialogFooter>

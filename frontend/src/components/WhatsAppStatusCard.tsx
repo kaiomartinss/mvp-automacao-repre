@@ -1,26 +1,22 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { checkWhatsAppStatus, disconnectWhatsApp, getWhatsAppQrCode } from '@/app/actions/evolution'
-import { 
-  Smartphone, 
-  Wifi, 
-  WifiOff, 
-  RefreshCw, 
-  QrCode, 
-  CheckCircle2, 
-  AlertTriangle, 
-  LogOut, 
-  Loader2,
-  Server
-} from 'lucide-react'
+import {
+  DeviceMobile,
+  ArrowsClockwise,
+  QrCode,
+  CheckCircle,
+  Warning,
+  SignOut,
+  CircleNotch,
+} from '@phosphor-icons/react'
 
 export function WhatsAppStatusCard() {
   const [loading, setLoading] = useState(false)
   const [disconnecting, setDisconnecting] = useState(false)
+  const [confirmDisconnect, setConfirmDisconnect] = useState(false)
   const [status, setStatus] = useState<'connected' | 'disconnected' | 'connecting' | 'offline' | 'idle'>('idle')
   const [instanceName, setInstanceName] = useState('winback')
   const [qrcode, setQrcode] = useState<string | null>(null)
@@ -45,10 +41,10 @@ export function WhatsAppStatusCard() {
   }, [])
 
   const handleDisconnect = async () => {
-    if (!confirm('Deseja realmente desconectar o WhatsApp desta sessão?')) return
     setDisconnecting(true)
     await disconnectWhatsApp()
     setDisconnecting(false)
+    setConfirmDisconnect(false)
     await fetchStatus()
   }
 
@@ -65,160 +61,204 @@ export function WhatsAppStatusCard() {
   }
 
   return (
-    <Card className="border-white/[0.08] bg-[#111215] shadow-none flex flex-col justify-between overflow-hidden relative">
-      
-      <div>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
-              <Smartphone className="w-5 h-5 text-emerald-400" />
-              Conexão WhatsApp (Evolution API)
-            </CardTitle>
-            
+    <section className="rounded-xl border border-white/[0.08] bg-[#111215] overflow-hidden">
+      <div className="p-6 space-y-5">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-lg border border-white/[0.08] bg-[#0C0D0F] flex items-center justify-center shrink-0">
+              <DeviceMobile className="w-4 h-4 text-zinc-300" weight="regular" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-[#F4F4F5] tracking-tight">
+                Conexão WhatsApp (Evolution API)
+              </h3>
+              <p className="text-xs text-zinc-400 mt-0.5">
+                Pareie seu número comercial para disparar mensagens de reativação pelo painel.
+              </p>
+            </div>
+          </div>
+
+          <div className="shrink-0">
             {status === 'connected' && (
-              <Badge className="bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 gap-1.5 px-2.5 py-0.5 text-xs font-medium">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="inline-flex items-center gap-2 font-mono text-xs text-zinc-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#00E676]" />
                 Conectado
-              </Badge>
+              </span>
             )}
-
             {(status === 'disconnected' || status === 'connecting') && (
-              <Badge className="bg-amber-500/15 text-amber-400 border border-amber-500/30 gap-1.5 px-2.5 py-0.5 text-xs font-medium">
-                <span className="w-2 h-2 rounded-full bg-amber-400" />
-                Aguardando QR Code
-              </Badge>
+              <span className="inline-flex items-center gap-2 font-mono text-xs text-zinc-300">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                Aguardando QR
+              </span>
             )}
-
             {status === 'offline' && (
-              <Badge className="bg-destructive/15 text-destructive border border-destructive/30 gap-1.5 px-2.5 py-0.5 text-xs font-medium">
-                <WifiOff className="w-3 h-3" />
-                Servidor Offline
-              </Badge>
+              <span className="inline-flex items-center gap-2 font-mono text-xs text-red-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                Servidor offline
+              </span>
+            )}
+            {status === 'idle' && (
+              <span className="inline-flex items-center gap-2 font-mono text-xs text-zinc-500">
+                <CircleNotch className="w-3.5 h-3.5 animate-spin" weight="bold" />
+                Verificando
+              </span>
             )}
           </div>
-          <CardDescription className="text-xs text-muted-foreground mt-1">
-            Pareie seu número de WhatsApp para disparar as mensagens de reativação comercial.
-          </CardDescription>
-        </CardHeader>
+        </div>
 
-        <CardContent className="space-y-4 pt-1">
-          {/* Status: Conectado */}
-          {status === 'connected' && (
-            <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/15 space-y-3">
-              <div className="flex items-start gap-3">
-                <div className="w-9 h-9 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-white">Instância Ativa: <span className="text-emerald-400 font-mono text-xs">{instanceName}</span></h4>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    O robô está pronto para disparar mensagens de reativação diretamente pelo painel Web.
-                  </p>
-                </div>
-              </div>
+        {/* Status: Conectado */}
+        {status === 'connected' && (
+          <div className="p-4 rounded-lg bg-[#0C0D0F] border border-white/[0.08] border-l-2 border-l-[#00E676] flex items-start gap-3">
+            <CheckCircle className="w-4 h-4 text-[#00E676] shrink-0 mt-0.5" weight="fill" />
+            <div>
+              <p className="text-sm font-medium text-[#F4F4F5]">
+                Instância ativa:{' '}
+                <span className="font-mono text-xs text-zinc-300">{instanceName}</span>
+              </p>
+              <p className="text-xs text-zinc-400 mt-1">
+                Sessão autenticada e pronta para realizar disparos diretamente pela fila de reativação.
+              </p>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Status: Desconectado com QR Code */}
-          {(status === 'disconnected' || status === 'connecting') && (
-            <div className="space-y-4">
-              <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/15 text-xs text-zinc-300 space-y-2">
-                <div className="flex items-center gap-2 font-medium text-amber-400">
-                  <QrCode className="w-4 h-4" />
-                  <span>Escaneie para conectar:</span>
-                </div>
-                <ol className="list-decimal list-inside space-y-1 text-muted-foreground text-[11px] leading-relaxed">
-                  <li>Abra o WhatsApp no seu smartphone</li>
-                  <li>Toque em <strong className="text-white">Aparelhos conectados</strong> &gt; <strong className="text-white">Conectar aparelho</strong></li>
-                  <li>Aponte a câmera para o QR Code abaixo</li>
-                </ol>
+        {/* Status: Desconectado com QR Code */}
+        {(status === 'disconnected' || status === 'connecting') && (
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
+            <div className="md:col-span-7 p-4 rounded-lg bg-[#0C0D0F] border border-white/[0.08] border-l-2 border-l-amber-400 space-y-2.5">
+              <div className="flex items-center gap-2 text-xs font-medium text-[#F4F4F5]">
+                <QrCode className="w-4 h-4 text-amber-400" weight="regular" />
+                <span>Escaneie o código para conectar</span>
               </div>
+              <ol className="list-decimal list-inside space-y-1.5 text-zinc-400 text-xs leading-relaxed">
+                <li>Abra o WhatsApp no seu celular</li>
+                <li>
+                  Acesse <strong className="text-zinc-200 font-medium">Aparelhos conectados</strong> &gt;{' '}
+                  <strong className="text-zinc-200 font-medium">Conectar aparelho</strong>
+                </li>
+                <li>Aponte a câmera para o QR Code ao lado</li>
+              </ol>
+            </div>
 
+            <div className="md:col-span-5 flex justify-center">
               {qrcode ? (
-                <div className="flex flex-col items-center justify-center p-4 bg-white rounded-xl shadow-inner max-w-[240px] mx-auto border-2 border-primary/20">
+                <div className="flex flex-col items-center p-3.5 bg-white rounded-lg border border-white/20">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img 
-                    src={qrcode} 
-                    alt="QR Code WhatsApp" 
-                    className="w-48 h-48 object-contain"
+                  <img
+                    src={qrcode}
+                    alt="QR Code de pareamento do WhatsApp"
+                    className="w-44 h-44 object-contain"
                   />
-                  <span className="text-[10px] text-zinc-600 mt-1 font-mono">Atualize se expirar</span>
+                  <span className="text-[10px] text-zinc-600 mt-1.5 font-mono">
+                    Atualize se expirar
+                  </span>
                 </div>
               ) : (
-                <div className="p-6 rounded-xl bg-black/30 border border-white/5 flex flex-col items-center justify-center text-center">
-                  <Loader2 className="w-6 h-6 animate-spin text-primary mb-2" />
-                  <p className="text-xs text-muted-foreground">Gerando QR Code na Evolution API...</p>
+                <div className="w-full p-6 rounded-lg bg-[#0C0D0F] border border-white/[0.08] flex flex-col items-center justify-center text-center gap-2">
+                  <CircleNotch className="w-5 h-5 animate-spin text-zinc-400" weight="bold" />
+                  <p className="text-xs text-zinc-400">Gerando QR Code na Evolution API...</p>
                 </div>
               )}
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Status: Offline / Servidor Inativo */}
-          {status === 'offline' && (
-            <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 space-y-2">
-              <div className="flex items-center gap-2 text-destructive font-semibold text-xs">
-                <AlertTriangle className="w-4 h-4" />
-                <span>Servidor WhatsApp Inacessível</span>
-              </div>
-              <p className="text-[11px] text-zinc-300 leading-relaxed">
-                {errorMessage || 'A Evolution API não está respondendo em http://localhost:8080. Inicie o container no Docker via terminal:'}
-              </p>
-              <div className="bg-black/40 p-2 rounded text-[11px] font-mono text-emerald-400 select-all border border-white/5">
-                docker compose up -d
-              </div>
+        {/* Status: Offline */}
+        {status === 'offline' && (
+          <div className="p-4 rounded-lg bg-[#0C0D0F] border border-white/[0.08] border-l-2 border-l-red-400 space-y-2.5">
+            <div className="flex items-center gap-2 text-red-400 font-medium text-xs">
+              <Warning className="w-4 h-4 shrink-0" weight="regular" />
+              <span>Servidor WhatsApp inacessível</span>
             </div>
-          )}
-        </CardContent>
+            <p className="text-xs text-zinc-400 leading-relaxed">
+              {errorMessage ||
+                'A Evolution API não respondeu em http://localhost:8080. Inicie o container via terminal:'}
+            </p>
+            <div className="bg-[#111215] px-3 py-2 rounded-md text-xs font-mono text-zinc-200 select-all border border-white/[0.08]">
+              docker compose up -d
+            </div>
+          </div>
+        )}
       </div>
 
-      <div className="p-6 pt-2 flex flex-col sm:flex-row gap-2 border-t border-white/5 mt-4">
+      {/* Footer Actions */}
+      <div className="px-6 py-4 bg-[#0C0D0F]/55 border-t border-white/[0.08] flex flex-wrap items-center justify-between gap-2.5">
         <Button
           type="button"
           onClick={fetchStatus}
           disabled={loading || disconnecting}
           variant="outline"
           size="sm"
-          className="flex-1 border-white/10 bg-white/5 hover:bg-white/10 text-white text-xs gap-1.5 cursor-pointer"
+          className="border-white/12 bg-white/[0.03] hover:bg-white/[0.07] text-zinc-200 text-xs gap-1.5 cursor-pointer"
         >
           {loading ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            <CircleNotch className="w-3.5 h-3.5 animate-spin" weight="bold" />
           ) : (
-            <RefreshCw className="w-3.5 h-3.5" />
+            <ArrowsClockwise className="w-3.5 h-3.5" weight="regular" />
           )}
-          <span>Atualizar Status</span>
+          <span>Atualizar status</span>
         </Button>
 
-        {(status === 'disconnected' || status === 'connecting') && (
-          <Button
-            type="button"
-            onClick={handleRefreshQr}
-            disabled={loading}
-            size="sm"
-            className="flex-1 bg-primary hover:bg-primary/90 text-black font-semibold text-xs gap-1.5 cursor-pointer"
-          >
-            <QrCode className="w-3.5 h-3.5" />
-            <span>Novo QR Code</span>
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {(status === 'disconnected' || status === 'connecting') && (
+            <Button
+              type="button"
+              onClick={handleRefreshQr}
+              disabled={loading}
+              size="sm"
+              className="bg-[#F4F4F5] hover:bg-white text-[#0C0D0F] font-medium text-xs gap-1.5 active:scale-[0.985] transition-all cursor-pointer"
+            >
+              <QrCode className="w-3.5 h-3.5" weight="bold" />
+              <span>Novo QR Code</span>
+            </Button>
+          )}
 
-        {status === 'connected' && (
-          <Button
-            type="button"
-            onClick={handleDisconnect}
-            disabled={disconnecting}
-            variant="destructive"
-            size="sm"
-            className="text-xs gap-1.5 cursor-pointer"
-          >
-            {disconnecting ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <LogOut className="w-3.5 h-3.5" />
-            )}
-            <span>Desconectar</span>
-          </Button>
-        )}
+          {status === 'connected' && !confirmDisconnect && (
+            <Button
+              type="button"
+              onClick={() => setConfirmDisconnect(true)}
+              disabled={disconnecting}
+              variant="ghost"
+              size="sm"
+              className="text-xs text-zinc-400 hover:text-red-400 hover:bg-red-500/10 gap-1.5 cursor-pointer"
+            >
+              <SignOut className="w-3.5 h-3.5" weight="regular" />
+              <span>Desconectar</span>
+            </Button>
+          )}
+
+          {status === 'connected' && confirmDisconnect && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-zinc-400">Encerrar sessão?</span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setConfirmDisconnect(false)}
+                disabled={disconnecting}
+                className="text-xs text-zinc-400 hover:text-zinc-100 cursor-pointer"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                onClick={handleDisconnect}
+                disabled={disconnecting}
+                size="sm"
+                className="bg-red-500/90 hover:bg-red-500 text-white text-xs gap-1.5 cursor-pointer"
+              >
+                {disconnecting ? (
+                  <CircleNotch className="w-3.5 h-3.5 animate-spin" weight="bold" />
+                ) : (
+                  <SignOut className="w-3.5 h-3.5" weight="bold" />
+                )}
+                <span>Confirmar</span>
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
-    </Card>
+    </section>
   )
 }

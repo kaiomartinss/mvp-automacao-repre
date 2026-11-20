@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Winback Engine",
-  description: "SaaS de Reativação Comercial",
+  description: "Plataforma de Reativação Comercial",
 };
 
 export default function RootLayout({
@@ -27,10 +27,13 @@ export default function RootLayout({
       lang="pt-BR"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
     >
-      <body className="min-h-full flex flex-col text-foreground bg-background">
+      <body className="min-h-full flex flex-col text-foreground bg-background relative">
+        <div
+          aria-hidden="true"
+          className="app-grain fixed inset-0 z-[60] pointer-events-none opacity-[0.022]"
+        />
         {children}
       </body>
     </html>
   );
 }
-

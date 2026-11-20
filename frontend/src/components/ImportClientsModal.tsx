@@ -1,11 +1,33 @@
 'use client'
 
 import { useState } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { importClients, ImportClientData } from '@/app/actions/clients'
-import { UploadCloud, FileSpreadsheet, Download, CheckCircle2, AlertCircle, Loader2, Users } from 'lucide-react'
+import {
+  CloudArrowUp,
+  FileCsv,
+  DownloadSimple,
+  CheckCircle,
+  WarningCircle,
+  CircleNotch,
+  Users,
+} from '@phosphor-icons/react'
 
 interface ImportClientsModalProps {
   open: boolean
@@ -28,7 +50,6 @@ export function ImportClientsModal({ open, onOpenChange, onSuccess }: ImportClie
       return
     }
 
-    // Identifica separador (vírgula ou ponto-e-vírgula)
     const headerLine = lines[0]
     const separator = headerLine.includes(';') ? ';' : ','
     const headers = headerLine.split(separator).map((h) => h.trim().toLowerCase().replace(/["']/g, ''))
@@ -116,56 +137,61 @@ export function ImportClientsModal({ open, onOpenChange, onSuccess }: ImportClie
     if (res.error) {
       setError(res.error)
     } else {
-      setSuccess(res.message || 'Importação realizada com sucesso!')
+      setSuccess(res.message || 'Importação realizada com sucesso.')
       setTimeout(() => {
         onOpenChange(false)
         setParsedClients([])
         setFileName(null)
         setSuccess(null)
         if (onSuccess) onSuccess()
-      }, 1500)
+      }, 1400)
     }
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[650px] border-white/[0.1] bg-[#111215] text-foreground shadow-2xl max-h-[90vh] flex flex-col">
+      <DialogContent className="sm:max-w-[650px] max-h-[90vh] flex flex-col">
         <DialogHeader>
-          <div className="flex items-center justify-between pr-6">
-            <DialogTitle className="text-lg font-bold tracking-tight text-white flex items-center gap-2">
-              <FileSpreadsheet className="w-5 h-5 text-primary" />
-              Importar Carteira de Clientes (CSV)
-            </DialogTitle>
+          <div className="flex items-center justify-between pr-8 gap-3">
+            <div>
+              <DialogTitle className="flex items-center gap-2">
+                <FileCsv className="w-4 h-4 text-zinc-300" weight="regular" />
+                Importar carteira (CSV)
+              </DialogTitle>
+              <DialogDescription className="mt-1">
+                Envie sua planilha com ponto-e-vírgula (;) ou vírgula (,).
+              </DialogDescription>
+            </div>
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={handleDownloadSample}
-              className="text-xs border-white/10 bg-white/5 hover:bg-white/10 gap-1.5 cursor-pointer text-muted-foreground hover:text-white"
+              className="text-xs border-white/12 bg-white/[0.03] hover:bg-white/[0.07] gap-1.5 cursor-pointer text-zinc-300 hover:text-[#F4F4F5] shrink-0"
             >
-              <Download className="w-3.5 h-3.5" />
-              Baixar Modelo
+              <DownloadSimple className="w-3.5 h-3.5" weight="regular" />
+              Modelo CSV
             </Button>
           </div>
         </DialogHeader>
 
-        <div className="space-y-4 pt-2 overflow-y-auto pr-1 flex-1">
+        <div className="space-y-4 overflow-y-auto pr-1 flex-1">
           {error && (
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs">
-              <AlertCircle className="w-4 h-4 shrink-0" />
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/25 text-red-300 text-xs">
+              <WarningCircle className="w-4 h-4 shrink-0" weight="regular" />
               <span>{error}</span>
             </div>
           )}
 
           {success && (
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/10 border border-primary/20 text-primary text-xs font-medium">
-              <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 text-xs font-medium">
+              <CheckCircle className="w-4 h-4 shrink-0" weight="fill" />
               <span>{success}</span>
             </div>
           )}
 
           {/* Upload Area */}
-          <label className="border-2 border-dashed border-white/15 hover:border-primary/50 transition-all rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer bg-white/[0.02] group">
+          <label className="border border-dashed border-white/15 hover:border-white/35 transition-colors rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer bg-[#0C0D0F] group">
             <input
               type="file"
               accept=".csv,text/csv"
@@ -173,47 +199,49 @@ export function ImportClientsModal({ open, onOpenChange, onSuccess }: ImportClie
               className="hidden"
               disabled={loading || !!success}
             />
-            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-              <UploadCloud className="w-6 h-6 text-primary" />
+            <div className="w-10 h-10 rounded-lg border border-white/10 bg-white/[0.04] flex items-center justify-center mb-3 transition-transform group-hover:-translate-y-0.5">
+              <CloudArrowUp className="w-5 h-5 text-zinc-200" weight="regular" />
             </div>
-            <p className="text-sm font-medium text-white">
-              {fileName ? fileName : 'Clique para selecionar o arquivo .CSV da sua planilha'}
+            <p className="text-sm font-medium text-[#F4F4F5]">
+              {fileName ? fileName : 'Selecionar arquivo .CSV'}
             </p>
-            <p className="text-xs text-muted-foreground mt-1 text-center">
-              Separadores aceitos: ponto-e-vírgula (;) ou vírgula (,). Colunas: Nome, Telefone, CNPJ, Cidade, UF, Data da Última Compra.
+            <p className="text-xs text-zinc-500 mt-1 text-center">
+              Colunas suportadas: Nome, Telefone, CNPJ, Cidade, UF, Data da última compra.
             </p>
           </label>
 
           {/* Preview Table */}
           {parsedClients.length > 0 && (
             <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span className="font-semibold text-white flex items-center gap-1.5">
-                  <Users className="w-3.5 h-3.5 text-primary" />
-                  {parsedClients.length} clientes prontos para importação
+              <div className="flex items-center justify-between text-xs text-zinc-400">
+                <span className="font-medium text-[#F4F4F5] flex items-center gap-1.5 font-mono tabular-nums">
+                  <Users className="w-3.5 h-3.5 text-zinc-400" weight="regular" />
+                  {parsedClients.length} registros prontos
                 </span>
-                <span>(Mostrando primeiros 5 para conferência)</span>
+                <span className="text-zinc-500">Prévia dos primeiros 5</span>
               </div>
 
-              <div className="border border-white/10 rounded-lg overflow-hidden bg-black/30">
+              <div className="border border-white/[0.08] rounded-lg overflow-hidden bg-[#0C0D0F]">
                 <Table>
                   <TableHeader>
-                    <TableRow className="border-white/10 hover:bg-transparent">
-                      <TableHead className="text-xs">Nome</TableHead>
-                      <TableHead className="text-xs">Telefone</TableHead>
-                      <TableHead className="text-xs">Cidade/UF</TableHead>
-                      <TableHead className="text-xs">Última Compra</TableHead>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Telefone</TableHead>
+                      <TableHead>Cidade / UF</TableHead>
+                      <TableHead>Última compra</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {parsedClients.slice(0, 5).map((c, i) => (
-                      <TableRow key={i} className="border-white/5 text-xs">
-                        <TableCell className="font-medium text-white">{c.name}</TableCell>
-                        <TableCell className="font-mono text-muted-foreground">{c.phone}</TableCell>
-                        <TableCell className="text-muted-foreground">
+                      <TableRow key={i} className="text-xs">
+                        <TableCell className="font-medium text-[#F4F4F5]">{c.name}</TableCell>
+                        <TableCell className="font-mono text-zinc-400 tabular-nums">{c.phone}</TableCell>
+                        <TableCell className="text-zinc-400">
                           {c.city ? `${c.city}${c.state ? ` - ${c.state}` : ''}` : '-'}
                         </TableCell>
-                        <TableCell className="font-mono text-muted-foreground">{c.lastVisit || '-'}</TableCell>
+                        <TableCell className="font-mono text-zinc-400 tabular-nums">
+                          {c.lastVisit || '-'}
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -223,13 +251,13 @@ export function ImportClientsModal({ open, onOpenChange, onSuccess }: ImportClie
           )}
         </div>
 
-        <DialogFooter className="pt-4 border-t border-white/5 gap-2 sm:gap-0">
+        <DialogFooter>
           <Button
             type="button"
             variant="ghost"
             onClick={() => onOpenChange(false)}
             disabled={loading}
-            className="hover:bg-white/5"
+            className="text-zinc-300 hover:bg-white/5 cursor-pointer"
           >
             Cancelar
           </Button>
@@ -240,12 +268,12 @@ export function ImportClientsModal({ open, onOpenChange, onSuccess }: ImportClie
             className="bg-[#F4F4F5] hover:bg-white text-[#0C0D0F] font-medium cursor-pointer active:scale-[0.985] transition-all"
           >
             {loading ? (
-              <div className="flex items-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Importando clientes...</span>
-              </div>
+              <span className="inline-flex items-center gap-2">
+                <CircleNotch className="w-4 h-4 animate-spin" weight="bold" />
+                Importando...
+              </span>
             ) : (
-              `Confirmar Importação (${parsedClients.length})`
+              `Importar (${parsedClients.length})`
             )}
           </Button>
         </DialogFooter>

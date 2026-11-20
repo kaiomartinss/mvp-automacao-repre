@@ -61,24 +61,17 @@ export default function OnboardingPage() {
         <DotGrid
           dotSize={1.5}
           gap={30}
-          baseColor="rgba(244, 244, 245, 0.13)"
+          baseColor="rgba(244, 244, 245, 0.14)"
           activeColor="rgba(0, 230, 118, 0.72)"
           proximity={140}
+          className="[mask-image:radial-gradient(ellipse_at_center,black_42%,transparent_88%)]"
         />
 
-        <header className="relative z-10 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-md bg-[#F4F4F5] text-[#0C0D0F] flex items-center justify-center font-bold text-sm tracking-tighter">
-              W
-            </div>
-            <DecryptedText
-              text="WINBACK ENGINE"
-              className="font-mono text-xs tracking-[0.2em] text-zinc-300 uppercase"
-            />
-          </div>
-          <span className="font-mono text-xs text-zinc-500">
-            Configuração Inicial
-          </span>
+        <header className="relative z-10 flex items-center justify-center">
+          <DecryptedText
+            text="WINBACK ENGINE"
+            className="font-mono text-xs tracking-[0.26em] text-zinc-200 uppercase"
+          />
         </header>
 
         <div className="relative z-10 max-w-xl my-auto py-12">
@@ -108,15 +101,10 @@ export default function OnboardingPage() {
 
       {/* Right Onboarding Form Column */}
       <main className="lg:col-span-6 flex flex-col justify-between bg-[#111215] lg:border-l border-white/[0.08] px-6 py-8 sm:px-12 lg:px-14 xl:px-16 min-h-[100dvh]">
-        <div className="flex lg:hidden items-center justify-between pb-6 border-b border-white/[0.08]">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-md bg-[#F4F4F5] text-[#0C0D0F] flex items-center justify-center font-bold text-xs">
-              W
-            </div>
-            <span className="font-mono text-xs tracking-[0.18em] text-zinc-200 uppercase">
-              Winback Engine
-            </span>
-          </div>
+        <div className="flex lg:hidden items-center justify-center pb-6 border-b border-white/[0.08]">
+          <span className="font-mono text-xs tracking-[0.24em] text-zinc-200 uppercase">
+            Winback Engine
+          </span>
         </div>
 
         <div className="w-full max-w-md mx-auto my-auto py-8">

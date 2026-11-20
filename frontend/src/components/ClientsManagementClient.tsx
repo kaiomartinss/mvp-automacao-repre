@@ -1,38 +1,43 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Badge } from '@/components/ui/badge'
+import { motion, useReducedMotion } from 'motion/react'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
 import { DispararN8NButton } from '@/components/DispararN8NButton'
 import { addClient, updateClient, deleteClient } from '@/app/actions/clients'
-import { 
-  Search, 
-  UserPlus, 
-  MapPin, 
-  Building2, 
-  Phone, 
-  Calendar, 
-  Edit2, 
-  Trash2, 
-  Clock, 
-  CheckCircle2, 
-  AlertTriangle, 
-  AlertCircle,
-  Loader2,
-  Users,
-  Filter,
-  ExternalLink,
-  FileSpreadsheet
-} from 'lucide-react'
-import { Receipt } from '@phosphor-icons/react'
+import {
+  MagnifyingGlass,
+  UserPlus,
+  MapPin,
+  PencilSimple,
+  Trash,
+  Clock,
+  WarningCircle,
+  CircleNotch,
+  ArrowSquareOut,
+  FileCsv,
+  Receipt,
+} from '@phosphor-icons/react'
 import { RegisterOrderModal } from '@/components/RegisterOrderModal'
 import { ImportClientsModal } from '@/components/ImportClientsModal'
-
 
 export interface ClientItem {
   id: string
@@ -45,22 +50,31 @@ export interface ClientItem {
   last_visit?: string | null
 }
 
+const SPRING_TAB = {
+  type: 'spring' as const,
+  stiffness: 420,
+  damping: 34,
+}
+
 export function ClientsManagementClient({ initialClients }: { initialClients: ClientItem[] }) {
   const [clients, setClients] = useState<ClientItem[]>(initialClients)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'alert' | 'inactive'>('all')
   const [stateFilter, setStateFilter] = useState<string>('all')
+  const shouldReduceMotion = useReducedMotion()
 
   // Modals state
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [editingClient, setEditingClient] = useState<ClientItem | null>(null)
+  const [deletingClient, setDeletingClient] = useState<ClientItem | null>(null)
+  const [deleteLoading, setDeleteLoading] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
   const [isImportOpen, setIsImportOpen] = useState(false)
   const [orderModalClient, setOrderModalClient] = useState<{ id: string; name: string } | null>(null)
   const [formLoading, setFormLoading] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
 
-  // Format CNPJ helper: 00.000.000/0000-00
   const formatCNPJ = (val?: string | null) => {
     if (!val) return null
     const clean = val.replace(/\D/g, '')
@@ -70,7 +84,6 @@ export function ClientsManagementClient({ initialClients }: { initialClients: Cl
     return val
   }
 
-  // Format Phone helper: (00) 00000-0000
   const formatPhone = (phone?: string) => {
     if (!phone) return 'Não informado'
     const clean = phone.replace(/^55/, '').replace(/\D/g, '')
@@ -83,40 +96,15 @@ export function ClientsManagementClient({ initialClients }: { initialClients: Cl
     return phone
   }
 
-  // Calculate days since last visit
   const getDaysSinceLastVisit = (lastVisit?: string | null) => {
     if (!lastVisit) return null
     const diff = (new Date().getTime() - new Date(lastVisit).getTime()) / (1000 * 3600 * 24)
     return Math.floor(diff)
   }
 
-  // Initials & deterministic monochrome surface for client monogram
-  const getClientInitials = (name: string) => {
-    const parts = name.trim().split(/\s+/).filter(Boolean)
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-    }
-    return name.slice(0, 2).toUpperCase()
-  }
-
-  const getMonogramTone = (seed: string) => {
-    const tones = [
-      'bg-zinc-900 text-zinc-100 border-white/15',
-      'bg-[#181A20] text-zinc-200 border-white/12',
-      'bg-[#14161B] text-[#F4F4F5] border-white/15',
-      'bg-zinc-800/80 text-zinc-100 border-white/20',
-    ]
-    let hash = 0
-    for (let i = 0; i < seed.length; i++) {
-      hash = (hash * 31 + seed.charCodeAt(i)) >>> 0
-    }
-    return tones[hash % tones.length]
-  }
-
-  // Available unique states for filter
   const availableStates = useMemo(() => {
     const states = new Set<string>()
-    clients.forEach(c => {
+    clients.forEach((c) => {
       if (c.state && c.state.trim()) {
         states.add(c.state.trim().toUpperCase())
       }
@@ -124,14 +112,13 @@ export function ClientsManagementClient({ initialClients }: { initialClients: Cl
     return Array.from(states).sort()
   }, [clients])
 
-  // Metrics summary
   const metrics = useMemo(() => {
     const total = clients.length
     let active = 0
     let alert = 0
     let inactive = 0
 
-    clients.forEach(c => {
+    clients.forEach((c) => {
       const days = getDaysSinceLastVisit(c.last_visit)
       if (days === null || days >= 90) {
         inactive++
@@ -145,12 +132,11 @@ export function ClientsManagementClient({ initialClients }: { initialClients: Cl
     return { total, active, alert, inactive }
   }, [clients])
 
-  // Filtered clients list
   const filteredClients = useMemo(() => {
-    return clients.filter(c => {
-      // Search term
+    return clients.filter((c) => {
       const term = searchTerm.toLowerCase().trim()
-      const matchesSearch = !term || 
+      const matchesSearch =
+        !term ||
         c.name.toLowerCase().includes(term) ||
         (c.phone && c.phone.includes(term)) ||
         (c.cnpj && c.cnpj.includes(term)) ||
@@ -158,28 +144,19 @@ export function ClientsManagementClient({ initialClients }: { initialClients: Cl
 
       if (!matchesSearch) return false
 
-      // State filter
       if (stateFilter !== 'all') {
         if (c.state?.toUpperCase() !== stateFilter) return false
       }
 
-      // Status filter
       const days = getDaysSinceLastVisit(c.last_visit)
-      if (statusFilter === 'active') {
-        return days !== null && days < 30
-      }
-      if (statusFilter === 'alert') {
-        return days !== null && days >= 30 && days < 90
-      }
-      if (statusFilter === 'inactive') {
-        return days === null || days >= 90
-      }
+      if (statusFilter === 'active') return days !== null && days < 30
+      if (statusFilter === 'alert') return days !== null && days >= 30 && days < 90
+      if (statusFilter === 'inactive') return days === null || days >= 90
 
       return true
     })
   }, [clients, searchTerm, statusFilter, stateFilter])
 
-  // Handle Add Client
   async function handleAddSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setFormError(null)
@@ -197,7 +174,6 @@ export function ClientsManagementClient({ initialClients }: { initialClients: Cl
     }
   }
 
-  // Handle Edit Client
   async function handleEditSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     if (!editingClient) return
@@ -220,470 +196,466 @@ export function ClientsManagementClient({ initialClients }: { initialClients: Cl
     }
   }
 
-  // Handle Delete Client
-  async function handleDelete(clientId: string, clientName: string) {
-    if (confirm(`Tem certeza que deseja remover "${clientName}" da base?`)) {
-      const res = await deleteClient(clientId)
-      if (res.error) {
-        alert(res.error)
-      } else {
-        setClients(prev => prev.filter(c => c.id !== clientId))
-      }
+  async function confirmDelete() {
+    if (!deletingClient) return
+    setDeleteLoading(true)
+    setDeleteError(null)
+    const res = await deleteClient(deletingClient.id)
+    setDeleteLoading(false)
+
+    if (res.error) {
+      setDeleteError(res.error)
+    } else {
+      setClients((prev) => prev.filter((c) => c.id !== deletingClient.id))
+      setDeletingClient(null)
     }
   }
 
+  const filterTabs: Array<{
+    id: 'all' | 'active' | 'alert' | 'inactive'
+    label: string
+    count: number
+    dot?: string
+  }> = [
+    { id: 'all', label: 'Todos', count: metrics.total },
+    { id: 'active', label: 'Ativos', count: metrics.active, dot: 'bg-[#00E676]' },
+    { id: 'alert', label: 'Alerta', count: metrics.alert, dot: 'bg-amber-400' },
+    { id: 'inactive', label: 'Inativos', count: metrics.inactive, dot: 'bg-red-400' },
+  ]
+
   return (
-    <div className="space-y-8">
-      {/* 1. Indicadores da Carteira */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border-white/10 bg-[#111215] shadow-none p-5 relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground font-medium">Total na Carteira</span>
-            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-              <Users className="w-4 h-4" />
+    <div className="space-y-6">
+      {/* 1. Faixa Unificada de Indicadores (Hairline Grid) */}
+      <section
+        aria-label="Resumo da carteira"
+        className="rounded-xl border border-white/[0.08] bg-[#111215] grid grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-white/[0.08]"
+      >
+        <div className="p-5 flex flex-col justify-between gap-2">
+          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-zinc-500">
+            Total na carteira
+          </span>
+          <div>
+            <div className="font-mono text-2xl md:text-3xl font-semibold text-[#F4F4F5] tabular-nums">
+              {metrics.total}
             </div>
+            <p className="text-xs text-zinc-500 mt-1">Clientes cadastrados</p>
           </div>
-          <div className="text-2xl font-bold text-white mt-2">{metrics.total}</div>
-          <p className="text-[11px] text-muted-foreground mt-1">Clientes cadastrados na base</p>
-        </Card>
+        </div>
 
-        <Card className="border-white/10 bg-[#111215] shadow-none p-5 relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground font-medium">Clientes Ativos</span>
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400">
-              <CheckCircle2 className="w-4 h-4" />
+        <div className="p-5 flex flex-col justify-between gap-2">
+          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-zinc-500 flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#00E676]" />
+            Ativos
+          </span>
+          <div>
+            <div className="font-mono text-2xl md:text-3xl font-semibold text-[#F4F4F5] tabular-nums">
+              {metrics.active}
             </div>
+            <p className="text-xs text-zinc-500 mt-1">Compra há menos de 30d</p>
           </div>
-          <div className="text-2xl font-bold text-emerald-400 mt-2">{metrics.active}</div>
-          <p className="text-[11px] text-muted-foreground mt-1">Comprando há menos de 30 dias</p>
-        </Card>
+        </div>
 
-        <Card className="border-white/10 bg-[#111215] shadow-none p-5 relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground font-medium">Em Alerta (30-90d)</span>
-            <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400">
-              <AlertTriangle className="w-4 h-4" />
+        <div className="p-5 flex flex-col justify-between gap-2">
+          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-zinc-500 flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+            Em alerta
+          </span>
+          <div>
+            <div className="font-mono text-2xl md:text-3xl font-semibold text-[#F4F4F5] tabular-nums">
+              {metrics.alert}
             </div>
+            <p className="text-xs text-zinc-500 mt-1">Entre 30 e 90 dias</p>
           </div>
-          <div className="text-2xl font-bold text-amber-400 mt-2">{metrics.alert}</div>
-          <p className="text-[11px] text-muted-foreground mt-1">Janela ideal para reativação rápida</p>
-        </Card>
+        </div>
 
-        <Card className="border-white/10 bg-[#111215] shadow-none p-5 relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground font-medium">Inativos (+90d)</span>
-            <div className="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-400">
-              <Clock className="w-4 h-4" />
+        <div className="p-5 flex flex-col justify-between gap-2">
+          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-zinc-500 flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+            Inativos
+          </span>
+          <div>
+            <div className="font-mono text-2xl md:text-3xl font-semibold text-[#F4F4F5] tabular-nums">
+              {metrics.inactive}
             </div>
+            <p className="text-xs text-zinc-500 mt-1">Mais de 90d ou sem compra</p>
           </div>
-          <div className="text-2xl font-bold text-rose-400 mt-2">{metrics.inactive}</div>
-          <p className="text-[11px] text-muted-foreground mt-1">Clientes frios aguardando contato</p>
-        </Card>
-      </div>
+        </div>
+      </section>
 
-      {/* 2. Barra de Busca, Filtros e Botão Novo Cliente */}
-      <Card className="border-white/10 bg-[#111215] shadow-none p-4">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          {/* Busca */}
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por Nome, Telefone, CNPJ ou Cidade..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 bg-black/40 border-white/10 text-xs h-10 focus-visible:ring-primary text-white"
-            />
-          </div>
-
-          {/* Filtros e Ação */}
-          <div className="flex flex-wrap items-center gap-2.5">
-            {/* Status Tabs */}
-            <div className="flex bg-black/40 p-1 rounded-lg border border-white/5 text-xs">
-              <button
-                type="button"
-                onClick={() => setStatusFilter('all')}
-                className={`px-3 py-1.5 rounded-md font-medium transition-all ${
-                  statusFilter === 'all'
-                    ? 'bg-primary text-black font-semibold'
-                    : 'text-muted-foreground hover:text-white'
-                }`}
-              >
-                Todos ({metrics.total})
-              </button>
-              <button
-                type="button"
-                onClick={() => setStatusFilter('active')}
-                className={`px-3 py-1.5 rounded-md font-medium transition-all ${
-                  statusFilter === 'active'
-                    ? 'bg-primary text-black font-semibold'
-                    : 'text-muted-foreground hover:text-white'
-                }`}
-              >
-                Ativos ({metrics.active})
-              </button>
-              <button
-                type="button"
-                onClick={() => setStatusFilter('alert')}
-                className={`px-3 py-1.5 rounded-md font-medium transition-all ${
-                  statusFilter === 'alert'
-                    ? 'bg-amber-400 text-black font-semibold'
-                    : 'text-muted-foreground hover:text-white'
-                }`}
-              >
-                Alerta ({metrics.alert})
-              </button>
-              <button
-                type="button"
-                onClick={() => setStatusFilter('inactive')}
-                className={`px-3 py-1.5 rounded-md font-medium transition-all ${
-                  statusFilter === 'inactive'
-                    ? 'bg-rose-500 text-white font-semibold'
-                    : 'text-muted-foreground hover:text-white'
-                }`}
-              >
-                Inativos ({metrics.inactive})
-              </button>
+      {/* 2. Tabela com Barra de Filtros Integrada */}
+      <section className="rounded-xl border border-white/[0.08] bg-[#111215] overflow-hidden">
+        {/* Toolbar */}
+        <div className="p-4 md:px-5 border-b border-white/[0.08] bg-[#0C0D0F]/35 flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+          {/* Busca + Filtro UF */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 flex-1">
+            <div className="relative flex-1 max-w-sm">
+              <MagnifyingGlass
+                className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 pointer-events-none"
+                weight="regular"
+              />
+              <Input
+                placeholder="Buscar por nome, telefone, CNPJ ou cidade..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 h-9 text-xs"
+              />
             </div>
 
-            {/* State Filter Dropdown */}
+            {/* Segmented Filter Control (transitions.dev layoutId spring) */}
+            <div
+              role="tablist"
+              aria-label="Filtrar por situação"
+              className="inline-flex items-center p-1 rounded-lg bg-[#0C0D0F] border border-white/[0.08] overflow-x-auto"
+            >
+              {filterTabs.map((tab) => {
+                const active = statusFilter === tab.id
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => setStatusFilter(tab.id)}
+                    className={`relative z-10 px-2.5 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap cursor-pointer inline-flex items-center gap-1.5 ${
+                      active ? 'text-[#0C0D0F]' : 'text-zinc-400 hover:text-zinc-100'
+                    }`}
+                  >
+                    {active && (
+                      <motion.span
+                        layoutId="clients-filter-pill"
+                        transition={shouldReduceMotion ? { duration: 0 } : SPRING_TAB}
+                        className="absolute inset-0 rounded-md bg-[#F4F4F5] -z-10"
+                      />
+                    )}
+                    {tab.dot && !active && (
+                      <span className={`w-1.5 h-1.5 rounded-full ${tab.dot}`} />
+                    )}
+                    <span>{tab.label}</span>
+                    <span
+                      className={`font-mono text-[10px] tabular-nums ${
+                        active ? 'text-[#0C0D0F]/70' : 'text-zinc-500'
+                      }`}
+                    >
+                      {tab.count}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Ações */}
+          <div className="flex flex-wrap items-center gap-2">
             {availableStates.length > 0 && (
               <select
                 value={stateFilter}
                 onChange={(e) => setStateFilter(e.target.value)}
-                className="bg-black/40 border border-white/10 text-xs text-white rounded-lg px-3 py-2 outline-none focus:border-primary"
+                aria-label="Filtrar por estado"
+                className="h-9 bg-[#0C0D0F] border border-white/12 text-xs text-zinc-200 rounded-lg px-3 outline-none focus:border-white/40 cursor-pointer"
               >
-                <option value="all">Todos os Estados</option>
-                {availableStates.map(uf => (
-                  <option key={uf} value={uf}>{uf}</option>
+                <option value="all">Todas as UFs</option>
+                {availableStates.map((uf) => (
+                  <option key={uf} value={uf}>
+                    {uf}
+                  </option>
                 ))}
               </select>
             )}
 
-            {/* Importar CSV Button */}
-            <Button
+            <button
               type="button"
-              variant="outline"
               onClick={() => setIsImportOpen(true)}
-              className="border-white/10 bg-white/5 hover:bg-white/10 text-white font-medium gap-1.5 h-10 cursor-pointer text-xs"
+              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-white/12 bg-white/[0.03] hover:bg-white/[0.07] text-zinc-200 text-xs font-medium active:scale-[0.985] transition-all cursor-pointer"
             >
-              <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+              <FileCsv className="w-4 h-4 text-zinc-400" weight="regular" />
               <span>Importar CSV</span>
-            </Button>
+            </button>
 
-            {/* Novo Cliente Button */}
-            <Button
+            <button
+              type="button"
               onClick={() => {
                 setFormError(null)
                 setIsAddOpen(true)
               }}
-              className="bg-[#F4F4F5] hover:bg-white text-[#0C0D0F] font-medium gap-1.5 h-10 active:scale-[0.985] transition-all cursor-pointer"
+              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg bg-[#F4F4F5] hover:bg-white text-[#0C0D0F] text-xs font-medium active:scale-[0.985] transition-all cursor-pointer whitespace-nowrap"
             >
-              <UserPlus className="w-4 h-4" />
+              <UserPlus className="w-4 h-4" weight="bold" />
               <span>Novo Cliente</span>
-            </Button>
+            </button>
           </div>
         </div>
-      </Card>
 
-      {/* 3. Tabela de Clientes */}
-      <Card className="border-white/10 bg-[#111215] shadow-none overflow-hidden">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow className="border-white/10 hover:bg-transparent">
-                <TableHead className="w-[260px]">Cliente / Razão Social</TableHead>
-                <TableHead>CNPJ</TableHead>
-                <TableHead>Localização</TableHead>
-                <TableHead>Telefone / WhatsApp</TableHead>
-                <TableHead>Última Compra</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
+        {/* Tabela */}
+        <Table>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="w-[260px]">Cliente</TableHead>
+              <TableHead>CNPJ</TableHead>
+              <TableHead>Localização</TableHead>
+              <TableHead>Telefone</TableHead>
+              <TableHead>Última compra</TableHead>
+              <TableHead className="text-right">Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredClients.length > 0 ? (
+              filteredClients.map((client) => {
+                const days = getDaysSinceLastVisit(client.last_visit)
+                const cnpjFormatted = formatCNPJ(client.cnpj)
+
+                return (
+                  <TableRow key={client.id} className="group/row">
+                    {/* Cliente */}
+                    <TableCell className="font-medium text-sm">
+                      <div>
+                        <p className="text-[#F4F4F5] font-medium leading-snug">{client.name}</p>
+                        <span className="text-[11px] text-zinc-500 font-mono">
+                          #{client.id.slice(0, 8)}
+                        </span>
+                      </div>
+                    </TableCell>
+
+                    {/* CNPJ */}
+                    <TableCell className="text-xs text-zinc-400 font-mono tabular-nums">
+                      {cnpjFormatted ? (
+                        <span className="text-zinc-300">{cnpjFormatted}</span>
+                      ) : (
+                        <span className="text-zinc-600">-</span>
+                      )}
+                    </TableCell>
+
+                    {/* Localização */}
+                    <TableCell className="text-xs text-zinc-400">
+                      {client.city || client.state ? (
+                        <div className="flex items-center gap-1.5 text-zinc-300">
+                          <MapPin className="w-3.5 h-3.5 text-zinc-500 shrink-0" weight="regular" />
+                          <span>
+                            {client.city ? client.city : ''}
+                            {client.city && client.state ? ' - ' : ''}
+                            {client.state ? client.state : ''}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-zinc-600">-</span>
+                      )}
+                    </TableCell>
+
+                    {/* Telefone */}
+                    <TableCell className="text-xs font-mono tabular-nums">
+                      <div className="flex items-center gap-2">
+                        <span className="text-zinc-300">{formatPhone(client.phone)}</span>
+                        {client.phone && (
+                          <a
+                            href={`https://wa.me/${client.phone.replace(/\D/g, '')}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            title="Abrir no WhatsApp Web"
+                            className="text-zinc-500 hover:text-[#F4F4F5] transition-colors"
+                          >
+                            <ArrowSquareOut className="w-3.5 h-3.5" weight="regular" />
+                          </a>
+                        )}
+                      </div>
+                    </TableCell>
+
+                    {/* Última compra & situação */}
+                    <TableCell>
+                      <div className="space-y-1">
+                        <div className="text-xs flex items-center gap-1.5 text-zinc-300 font-mono tabular-nums">
+                          <Clock className="w-3 h-3 text-zinc-500" weight="regular" />
+                          {client.last_visit
+                            ? new Date(client.last_visit).toLocaleDateString('pt-BR')
+                            : 'Sem registro'}
+                        </div>
+
+                        {days === null ? (
+                          <span className="inline-flex items-center gap-1.5 text-[11px] text-zinc-500 font-mono">
+                            <span className="w-1.5 h-1.5 rounded-full bg-zinc-500" />
+                            Sem compra
+                          </span>
+                        ) : days < 30 ? (
+                          <span className="inline-flex items-center gap-1.5 text-[11px] text-zinc-300 font-mono tabular-nums">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#00E676]" />
+                            Ativo · {days}d
+                          </span>
+                        ) : days < 90 ? (
+                          <span className="inline-flex items-center gap-1.5 text-[11px] text-zinc-300 font-mono tabular-nums">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                            Alerta · {days}d
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 text-[11px] text-zinc-300 font-mono tabular-nums">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                            Inativo · {days}d
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
+
+                    {/* Ações */}
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <DispararN8NButton
+                          clientId={client.id}
+                          clientName={client.name}
+                          phone={client.phone}
+                        />
+
+                        <button
+                          type="button"
+                          onClick={() => setOrderModalClient({ id: client.id, name: client.name })}
+                          className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md border border-white/[0.08] bg-transparent text-zinc-300 hover:text-[#F4F4F5] hover:bg-white/[0.06] text-xs font-medium active:scale-[0.98] transition-all cursor-pointer"
+                          title="Registrar venda"
+                        >
+                          <Receipt className="w-3.5 h-3.5" weight="regular" />
+                          <span className="hidden xl:inline">Venda</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingClient(client)
+                            setFormError(null)
+                            setIsEditOpen(true)
+                          }}
+                          className="inline-flex items-center justify-center h-8 w-8 rounded-md text-zinc-500 hover:text-[#F4F4F5] hover:bg-white/[0.06] transition-colors cursor-pointer"
+                          title="Editar cliente"
+                        >
+                          <PencilSimple className="w-4 h-4" weight="regular" />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDeleteError(null)
+                            setDeletingClient(client)
+                          }}
+                          className="inline-flex items-center justify-center h-8 w-8 rounded-md text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                          title="Excluir cliente"
+                        >
+                          <Trash className="w-4 h-4" weight="regular" />
+                        </button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )
+              })
+            ) : (
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={6} className="text-center text-zinc-500 py-14 text-sm">
+                  {searchTerm || statusFilter !== 'all' || stateFilter !== 'all'
+                    ? 'Nenhum cliente encontrado com os filtros aplicados.'
+                    : 'Nenhum cliente cadastrado na carteira.'}
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredClients.length > 0 ? (
-                filteredClients.map((client) => {
-                  const days = getDaysSinceLastVisit(client.last_visit)
-                  const cnpjFormatted = formatCNPJ(client.cnpj)
+            )}
+          </TableBody>
+        </Table>
+      </section>
 
-                  return (
-                    <TableRow key={client.id} className="group/row border-white/[0.06] hover:bg-white/[0.03] transition-colors">
-                      {/* Cliente Name */}
-                      <TableCell className="font-medium text-sm">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={`relative w-9 h-9 rounded-lg border flex items-center justify-center font-mono font-semibold text-[11px] tracking-wider shrink-0 transition-colors group-hover/row:border-white/30 ${getMonogramTone(client.id || client.name)}`}
-                          >
-                            {getClientInitials(client.name)}
-                            <span
-                              aria-hidden="true"
-                              className={`absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full ring-2 ring-[#111215] ${
-                                days === null
-                                  ? 'bg-zinc-500'
-                                  : days < 30
-                                  ? 'bg-[#00E676]'
-                                  : days < 90
-                                  ? 'bg-amber-400'
-                                  : 'bg-red-400'
-                              }`}
-                            />
-                          </div>
-                          <div>
-                            <p className="text-[#F4F4F5] font-medium leading-snug">{client.name}</p>
-                            <span className="text-[11px] text-zinc-500 font-mono">#{client.id.slice(0, 8)}</span>
-                          </div>
-                        </div>
-                      </TableCell>
-
-                      {/* CNPJ */}
-                      <TableCell className="text-xs text-zinc-400 font-mono">
-                        {cnpjFormatted ? (
-                          <span className="text-zinc-300">{cnpjFormatted}</span>
-                        ) : (
-                          <span className="text-zinc-600">-</span>
-                        )}
-                      </TableCell>
-
-                      {/* Localização */}
-                      <TableCell className="text-xs text-zinc-400">
-                        {client.city || client.state ? (
-                          <div className="flex items-center gap-1.5 text-zinc-300">
-                            <MapPin className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
-                            <span>
-                              {client.city ? client.city : ''}
-                              {client.city && client.state ? ' - ' : ''}
-                              {client.state ? client.state : ''}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-zinc-600">-</span>
-                        )}
-                      </TableCell>
-
-                      {/* Telefone */}
-                      <TableCell className="text-xs font-mono">
-                        <div className="flex items-center gap-2">
-                          <span className="text-zinc-300">{formatPhone(client.phone)}</span>
-                          {client.phone && (
-                            <a
-                              href={`https://wa.me/${client.phone.replace(/\D/g, '')}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              title="Abrir no WhatsApp Web"
-                              className="text-muted-foreground/50 hover:text-emerald-400 transition-colors"
-                            >
-                              <ExternalLink className="w-3.5 h-3.5" />
-                            </a>
-                          )}
-                        </div>
-                      </TableCell>
-
-                      {/* Última Compra e Status */}
-                      <TableCell>
-                        <div className="space-y-1">
-                          <div className="text-xs flex items-center gap-1.5 text-zinc-300">
-                            <Clock className="w-3 h-3 text-muted-foreground" />
-                            {client.last_visit 
-                              ? new Date(client.last_visit).toLocaleDateString('pt-BR')
-                              : 'Sem registro'}
-                          </div>
-
-                          {days === null ? (
-                            <span className="inline-flex items-center gap-1.5 text-[11px] text-zinc-400 font-mono">
-                              <span className="w-1.5 h-1.5 rounded-full bg-zinc-500" />
-                              Sem compra
-                            </span>
-                          ) : days < 30 ? (
-                            <span className="inline-flex items-center gap-1.5 text-[11px] text-zinc-200 font-mono">
-                              <span className="w-1.5 h-1.5 rounded-full bg-[#00E676]" />
-                              Ativo · {days}d
-                            </span>
-                          ) : days < 90 ? (
-                            <span className="inline-flex items-center gap-1.5 text-[11px] text-zinc-300 font-mono">
-                              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                              Alerta · {days}d
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1.5 text-[11px] text-zinc-300 font-mono">
-                              <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
-                              Inativo · {days}d
-                            </span>
-                          )}
-                        </div>
-                      </TableCell>
-
-                      {/* Ações */}
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {/* Reativar WhatsApp */}
-                          <DispararN8NButton
-                            clientId={client.id}
-                            clientName={client.name}
-                            phone={client.phone}
-                          />
-
-                          {/* Registrar Venda */}
-                          <button
-                            type="button"
-                            onClick={() => setOrderModalClient({ id: client.id, name: client.name })}
-                            className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md border border-white/[0.08] bg-transparent text-zinc-300 hover:text-[#F4F4F5] hover:bg-white/[0.06] text-xs font-medium active:scale-[0.98] transition-all cursor-pointer"
-                            title="Registrar Venda / Pedido"
-                          >
-                            <Receipt className="w-3.5 h-3.5" weight="regular" />
-                            <span className="hidden xl:inline">Venda</span>
-                          </button>
-
-                          {/* Editar */}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              setEditingClient(client)
-                              setFormError(null)
-                              setIsEditOpen(true)
-                            }}
-                            className="h-8 w-8 text-muted-foreground hover:text-white hover:bg-white/10"
-                            title="Editar Cliente"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </Button>
-
-                          {/* Deletar */}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDelete(client.id, client.name)}
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                            title="Excluir Cliente"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )
-                })
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-12 text-sm">
-                    {searchTerm || statusFilter !== 'all' || stateFilter !== 'all'
-                      ? 'Nenhum cliente encontrado com os filtros selecionados.'
-                      : 'Nenhum cliente cadastrado na base ainda.'}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </Card>
-
-      {/* 4. Modal de Adicionar Cliente (Completo com CNPJ, Cidade, Estado) */}
+      {/* Modal: Adicionar Cliente */}
       <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-        <DialogContent className="sm:max-w-[500px] border-white/10 bg-[#111215] text-foreground shadow-2xl">
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-              <UserPlus className="w-5 h-5 text-primary" />
-              Novo Cliente
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="w-4 h-4 text-zinc-300" weight="regular" />
+              Novo cliente
             </DialogTitle>
+            <DialogDescription>
+              Cadastre os dados comerciais para acompanhar o ciclo de recompra.
+            </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleAddSubmit} className="space-y-4 pt-2">
+          <form onSubmit={handleAddSubmit} className="space-y-4">
             {formError && (
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs">
-                <AlertCircle className="w-4 h-4 shrink-0" />
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/25 text-red-300 text-xs">
+                <WarningCircle className="w-4 h-4 shrink-0" weight="regular" />
                 <span>{formError}</span>
               </div>
             )}
 
-            <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Nome / Razão Social *</Label>
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-xs text-zinc-300">Nome / Razão social *</Label>
               <Input
                 name="name"
                 placeholder="Ex: Confecções Estilo Ltda"
                 required
                 disabled={formLoading}
-                className="bg-black/50 border-white/10 text-white focus-visible:ring-primary h-10"
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">CNPJ</Label>
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-xs text-zinc-300">CNPJ</Label>
                 <Input
                   name="cnpj"
                   placeholder="00.000.000/0000-00"
                   disabled={formLoading}
-                  className="bg-black/50 border-white/10 text-white focus-visible:ring-primary h-10 font-mono text-xs"
+                  className="font-mono text-xs"
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">WhatsApp / Telefone *</Label>
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-xs text-zinc-300">WhatsApp / Telefone *</Label>
                 <Input
                   name="phone"
                   placeholder="(83) 99999-9999"
                   required
                   disabled={formLoading}
-                  className="bg-black/50 border-white/10 text-white focus-visible:ring-primary h-10"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-3 gap-3">
-              <div className="col-span-2 space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Cidade</Label>
-                <Input
-                  name="city"
-                  placeholder="Ex: João Pessoa"
-                  disabled={formLoading}
-                  className="bg-black/50 border-white/10 text-white focus-visible:ring-primary h-10"
-                />
+              <div className="col-span-2 flex flex-col gap-1.5">
+                <Label className="text-xs text-zinc-300">Cidade</Label>
+                <Input name="city" placeholder="Ex: João Pessoa" disabled={formLoading} />
               </div>
 
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Estado (UF)</Label>
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-xs text-zinc-300">UF</Label>
                 <Input
                   name="state"
                   placeholder="PB"
                   maxLength={2}
                   disabled={formLoading}
-                  className="bg-black/50 border-white/10 text-white focus-visible:ring-primary h-10 uppercase text-center font-bold"
+                  className="uppercase text-center font-mono"
                 />
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Data da Última Compra</Label>
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-xs text-zinc-300">Data da última compra</Label>
               <Input
                 type="date"
                 name="lastVisit"
                 defaultValue={new Date().toISOString().split('T')[0]}
                 disabled={formLoading}
-                className="bg-black/50 border-white/10 text-white focus-visible:ring-primary h-10"
               />
             </div>
 
-            <DialogFooter className="pt-4">
+            <DialogFooter className="mt-2">
               <Button
                 type="button"
                 variant="ghost"
                 onClick={() => setIsAddOpen(false)}
                 disabled={formLoading}
-                className="hover:bg-white/5"
+                className="text-zinc-300 hover:bg-white/5 cursor-pointer"
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
                 disabled={formLoading}
-                className="bg-primary text-black hover:bg-primary/90 font-semibold"
+                className="bg-[#F4F4F5] text-[#0C0D0F] hover:bg-white font-medium active:scale-[0.985] transition-all cursor-pointer"
               >
                 {formLoading ? (
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Salvando...</span>
-                  </div>
+                  <span className="inline-flex items-center gap-2">
+                    <CircleNotch className="w-4 h-4 animate-spin" weight="bold" />
+                    Salvando...
+                  </span>
                 ) : (
-                  'Cadastrar Cliente'
+                  'Cadastrar cliente'
                 )}
               </Button>
             </DialogFooter>
@@ -691,105 +663,105 @@ export function ClientsManagementClient({ initialClients }: { initialClients: Cl
         </DialogContent>
       </Dialog>
 
-      {/* 5. Modal de Editar Cliente */}
+      {/* Modal: Editar Cliente */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="sm:max-w-[500px] border-white/10 bg-[#111215] text-foreground shadow-2xl">
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-              <Edit2 className="w-5 h-5 text-primary" />
-              Editar Cliente
+            <DialogTitle className="flex items-center gap-2">
+              <PencilSimple className="w-4 h-4 text-zinc-300" weight="regular" />
+              Editar cliente
             </DialogTitle>
+            <DialogDescription>
+              Atualize as informações de contato ou localização deste registro.
+            </DialogDescription>
           </DialogHeader>
 
           {editingClient && (
-            <form onSubmit={handleEditSubmit} className="space-y-4 pt-2">
+            <form onSubmit={handleEditSubmit} className="space-y-4">
               {formError && (
-                <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/25 text-red-300 text-xs">
+                  <WarningCircle className="w-4 h-4 shrink-0" weight="regular" />
                   <span>{formError}</span>
                 </div>
               )}
 
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Nome / Razão Social *</Label>
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-xs text-zinc-300">Nome / Razão social *</Label>
                 <Input
                   name="name"
                   defaultValue={editingClient.name}
                   required
                   disabled={formLoading}
-                  className="bg-black/50 border-white/10 text-white focus-visible:ring-primary h-10"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">CNPJ</Label>
+                <div className="flex flex-col gap-1.5">
+                  <Label className="text-xs text-zinc-300">CNPJ</Label>
                   <Input
                     name="cnpj"
                     defaultValue={editingClient.cnpj || ''}
                     placeholder="00.000.000/0000-00"
                     disabled={formLoading}
-                    className="bg-black/50 border-white/10 text-white focus-visible:ring-primary h-10 font-mono text-xs"
+                    className="font-mono text-xs"
                   />
                 </div>
 
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">WhatsApp / Telefone *</Label>
+                <div className="flex flex-col gap-1.5">
+                  <Label className="text-xs text-zinc-300">WhatsApp / Telefone *</Label>
                   <Input
                     name="phone"
                     defaultValue={editingClient.phone}
                     required
                     disabled={formLoading}
-                    className="bg-black/50 border-white/10 text-white focus-visible:ring-primary h-10"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-3">
-                <div className="col-span-2 space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Cidade</Label>
+                <div className="col-span-2 flex flex-col gap-1.5">
+                  <Label className="text-xs text-zinc-300">Cidade</Label>
                   <Input
                     name="city"
                     defaultValue={editingClient.city || ''}
                     disabled={formLoading}
-                    className="bg-black/50 border-white/10 text-white focus-visible:ring-primary h-10"
                   />
                 </div>
 
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Estado (UF)</Label>
+                <div className="flex flex-col gap-1.5">
+                  <Label className="text-xs text-zinc-300">UF</Label>
                   <Input
                     name="state"
                     defaultValue={editingClient.state || ''}
                     maxLength={2}
                     disabled={formLoading}
-                    className="bg-black/50 border-white/10 text-white focus-visible:ring-primary h-10 uppercase text-center font-bold"
+                    className="uppercase text-center font-mono"
                   />
                 </div>
               </div>
 
-              <DialogFooter className="pt-4">
+              <DialogFooter className="mt-2">
                 <Button
                   type="button"
                   variant="ghost"
                   onClick={() => setIsEditOpen(false)}
                   disabled={formLoading}
-                  className="hover:bg-white/5"
+                  className="text-zinc-300 hover:bg-white/5 cursor-pointer"
                 >
                   Cancelar
                 </Button>
                 <Button
                   type="submit"
                   disabled={formLoading}
-                  className="bg-primary text-black hover:bg-primary/90 font-semibold"
+                  className="bg-[#F4F4F5] text-[#0C0D0F] hover:bg-white font-medium active:scale-[0.985] transition-all cursor-pointer"
                 >
                   {formLoading ? (
-                    <div className="flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Salvando...</span>
-                    </div>
+                    <span className="inline-flex items-center gap-2">
+                      <CircleNotch className="w-4 h-4 animate-spin" weight="bold" />
+                      Salvando...
+                    </span>
                   ) : (
-                    'Atualizar Dados'
+                    'Atualizar dados'
                   )}
                 </Button>
               </DialogFooter>
@@ -798,14 +770,65 @@ export function ClientsManagementClient({ initialClients }: { initialClients: Cl
         </DialogContent>
       </Dialog>
 
-      {/* 5. Modal de Importação de Clientes via CSV */}
+      {/* Modal: Confirmação de Exclusão (sem window.confirm) */}
+      <Dialog
+        open={!!deletingClient}
+        onOpenChange={(open) => {
+          if (!open) setDeletingClient(null)
+        }}
+      >
+        <DialogContent className="sm:max-w-[420px]">
+          <DialogHeader>
+            <DialogTitle>Remover cliente da base</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir{' '}
+              <span className="text-zinc-200 font-medium">{deletingClient?.name}</span>? Esta ação
+              não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+
+          {deleteError && (
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/25 text-red-300 text-xs">
+              <WarningCircle className="w-4 h-4 shrink-0" weight="regular" />
+              <span>{deleteError}</span>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setDeletingClient(null)}
+              disabled={deleteLoading}
+              className="text-zinc-300 hover:bg-white/5 cursor-pointer"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={confirmDelete}
+              disabled={deleteLoading}
+              className="bg-red-500/90 hover:bg-red-500 text-white font-medium cursor-pointer"
+            >
+              {deleteLoading ? (
+                <span className="inline-flex items-center gap-2">
+                  <CircleNotch className="w-4 h-4 animate-spin" weight="bold" />
+                  Removendo...
+                </span>
+              ) : (
+                'Excluir cliente'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <ImportClientsModal
         open={isImportOpen}
         onOpenChange={setIsImportOpen}
         onSuccess={() => window.location.reload()}
       />
 
-      {/* 6. Modal de Registro de Venda / Pedido */}
       {orderModalClient && (
         <RegisterOrderModal
           open={!!orderModalClient}
@@ -820,4 +843,3 @@ export function ClientsManagementClient({ initialClients }: { initialClients: Cl
     </div>
   )
 }
-
